@@ -541,6 +541,21 @@ Add to JSON:
   const prompt = hasDescription
     ? `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
 
+CRITICAL FIRST: BOOK VALIDATION
+Before grading, validate whether this child actually read the book they claim. This is for educators and parents to trust the system.
+
+Check for:
+A. PLAGIARISM/AI REWRITING: Is writing too polished/formal for Grade ${gradeKey}? Generic AI phrases? Vocabulary too advanced? No personal voice?
+B. ACTUALLY READ: Do they mention specific scenes NOT in marketing blurbs? Deep knowledge or just blurb-level?
+C. CONFUSED BOOK: Wrong characters/plot from a different book in same genre?
+D. MADE-UP EVENTS: Plot points that sound real but don't actually happen?
+
+Output validation as a JSON object with: likelyPlagiarized, likelyActuallyRead, possiblyConfusedBook, madeUpPlotPoints (all boolean), validationWarning (null or string).
+
+---
+
+THEN: GRADE THE SUMMARY
+
 IMPORTANT: Your expectations must match their grade level. For Grade ${gradeKey}:
 - Expected focus: ${rubric.focus}
 - Forgivable errors: ${rubric.forgive}
@@ -576,6 +591,21 @@ Respond ONLY with valid JSON:
 {"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2 sentences>","suggestions":"<3 tips, numbered>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
 
     : `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
+
+CRITICAL FIRST: BOOK VALIDATION
+Before grading, validate whether this child actually read the book they claim. This is for educators and parents to trust the system.
+
+Check for:
+A. PLAGIARISM/AI REWRITING: Is writing too polished/formal for Grade ${gradeKey}? Generic AI phrases? Vocabulary too advanced? No personal voice?
+B. ACTUALLY READ: Do they mention specific scenes NOT in marketing blurbs? Deep knowledge or just blurb-level?
+C. CONFUSED BOOK: Wrong characters/plot from a different book in same genre?
+D. MADE-UP EVENTS: Plot points that sound real but don't actually happen?
+
+Output validation as a JSON object with: likelyPlagiarized, likelyActuallyRead, possiblyConfusedBook, madeUpPlotPoints (all boolean), validationWarning (null or string).
+
+---
+
+THEN: GRADE THE SUMMARY
 
 IMPORTANT: Your expectations must match their grade level. For Grade ${gradeKey}:
 - Expected focus: ${rubric.focus}
@@ -615,7 +645,7 @@ Respond ONLY with valid JSON:
 
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1500,
+      max_tokens: 2500,  // increased from 1500 to ensure validation fields are included
       temperature: 0.2,  // lower = more consistent grading
       messages: [
         {
