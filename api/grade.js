@@ -580,23 +580,32 @@ Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
 5. Structure — Is it organized with clear beginning, middle, end? Does it flow? (Grade ${gradeKey} level)
 ${accuracyInstructions}
 
-Also provide DETAILED FEEDBACK:
-- "feedback": 2-3 sentences about what they did well (tone appropriate for Grade ${gradeKey}).
-- "suggestions": Exactly 5-7 specific, actionable improvement tips numbered 1. 2. 3. etc. on separate lines (detailed, with concrete examples where helpful).
-- "detailedAnalysis": A comprehensive analysis covering:
-  * COMPREHENSION: What they understood well vs. missed about the plot, characters, themes
-  * MISSING ELEMENTS: Specific plot points, character details, or events they should have included but didn't
-  * WRITING QUALITY: Clarity issues, confusing sentences, unclear explanations (be specific)
-  * STRUCTURE & FLOW: How well-organized is it? Does it have clear beginning/middle/end? Any abrupt transitions?
-  * VOICE & ENGAGEMENT: Does it sound like the child's own voice? Is it engaging or dull? Why?
-  * EFFORT & ENGAGEMENT: Overall impression of how carefully they wrote this
-  (Write as 5-8 sentences of honest, constructive feedback)
+Also provide EXTREMELY DETAILED, COMPREHENSIVE FEEDBACK (this is the main point):
+- "feedback": 2-3 sentences highlighting strongest points (tone appropriate for Grade ${gradeKey}).
+- "suggestions": 10-15 HIGHLY SPECIFIC, ACTIONABLE tips numbered 1-15+ on separate lines. For EACH:
+  * State the EXACT problem (quote from summary if applicable)
+  * Explain WHY it's wrong for Grade ${gradeKey}
+  * Show EXACTLY how to fix it with an example
+  * Show what BETTER writing looks like
+  EXAMPLES OF SPECIFICITY:
+  - NOT: "Improve grammar" BUT: "Line 2: 'I reed' should be 'I read'. Check all past-tense verbs. Found 8 more: caled→called, difrent→different, pepul→people, lerned→learned, etc."
+  - NOT: "Add details" BUT: "You say 'they wanted to find love' but never name which character or describe their specific story. In 'All Out', include 'Jack and Lucia's story in 1920s Berlin where they risked everything to be together.'"
+  - NOT: "Improve writing" BUT: "You write 'they was all brave' three times. Change to: 'Each character demonstrated remarkable courage despite systemic oppression.'"
+- "detailedAnalysis": COMPREHENSIVE 10-15 sentence analysis covering:
+  * SPECIFIC SPELLING/GRAMMAR ERRORS: List EVERY error found with line context and correction
+  * MISSING PLOT/CHARACTER DETAILS: Name SPECIFIC characters they missed (e.g., 'Did not mention Jack or Lucia's 1920s Berlin story, or Sam's coming-of-age narrative')
+  * COMPREHENSION LEVEL: For Grade 12, did they understand complex themes (intersectionality, historical context, queer identity) or just surface-level 'people want to be happy'?
+  * WRITING MATURITY ASSESSMENT: Is vocabulary collegiate-level? Does sentence structure vary? Do they cite specific text evidence? Is there a thesis or argument?
+  * REPETITION PROBLEMS: Point out exact repeated phrases ('they was brave' appears 3 times, 'I liked' appears 5 times) and suggest varied alternatives
+  * STRUCTURAL ISSUES: How do paragraphs connect? What transitions are missing? Why does it feel repetitive?
+  * COMPARISON TO STANDARD: For Grade 12, this reads like Grade 4-5 level. Specific examples of why and how to elevate it.
+  (Write DETAILED feedback that a teacher would give)
 ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
 
 Respond ONLY with valid JSON:
-{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<5-7 detailed tips, numbered>","detailedAnalysis":"<5-8 sentences covering comprehension, missing elements, writing quality, structure, voice, effort>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
+{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<10-15 detailed tips, each numbered 1. 2. 3. etc., each with problem statement, why it matters, exact fix, and example of better writing>","detailedAnalysis":"<10-15 sentences covering all specific errors, missing details, comprehension gaps, writing maturity, repetition issues, structural problems, and comparison to grade standard>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
 
     : `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
 
@@ -636,23 +645,28 @@ Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
 5. Structure — Is it organized with clear beginning, middle, end? Does it flow? (Grade ${gradeKey} level)
 ${accuracyInstructions}
 
-Also provide DETAILED FEEDBACK:
-- "feedback": 2-3 sentences about what they did well (tone for Grade ${gradeKey}).
-- "suggestions": Exactly 5-7 specific, actionable improvement tips numbered 1. 2. 3. etc. on separate lines (detailed, with examples).
-- "detailedAnalysis": A comprehensive analysis covering:
-  * COMPREHENSION: What they understood well vs. missed about the plot, characters, themes
-  * MISSING ELEMENTS: Specific plot points, character details, or events they should have included but didn't
-  * WRITING QUALITY: Clarity issues, confusing sentences, unclear explanations (be specific)
-  * STRUCTURE & FLOW: How well-organized is it? Does it have clear beginning/middle/end? Any abrupt transitions?
-  * VOICE & ENGAGEMENT: Does it sound like the child's own voice? Is it engaging or dull? Why?
-  * EFFORT & ENGAGEMENT: Overall impression of how carefully they wrote this
-  (Write as 5-8 sentences of honest, constructive feedback)
+Also provide EXTREMELY DETAILED, COMPREHENSIVE FEEDBACK (this is the main point):
+- "feedback": 2-3 sentences highlighting strongest points (tone for Grade ${gradeKey}).
+- "suggestions": 10-15 HIGHLY SPECIFIC, ACTIONABLE tips numbered 1-15+ on separate lines. For EACH:
+  * State the EXACT problem (quote from summary if applicable)
+  * Explain WHY it's wrong for Grade ${gradeKey}
+  * Show EXACTLY how to fix it with an example
+  * Show what BETTER writing looks like
+- "detailedAnalysis": COMPREHENSIVE 10-15 sentence analysis covering:
+  * SPECIFIC SPELLING/GRAMMAR ERRORS: List EVERY error found with line context and correction
+  * MISSING PLOT/CHARACTER DETAILS: Name SPECIFIC characters they missed
+  * COMPREHENSION LEVEL: For this grade, did they understand complex themes or just surface-level ideas?
+  * WRITING MATURITY ASSESSMENT: Is vocabulary collegiate-level? Does sentence structure vary? Do they cite specific evidence?
+  * REPETITION PROBLEMS: Point out exact repeated phrases and suggest varied alternatives
+  * STRUCTURAL ISSUES: How do paragraphs connect? What transitions are missing? Why does it feel repetitive?
+  * COMPARISON TO STANDARD: For Grade ${gradeKey}, how does this compare to expected level? Specific examples of why and how to elevate it.
+  (Write DETAILED feedback that a teacher would give)
 ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
 
 Respond ONLY with valid JSON:
-{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<5-7 detailed tips, numbered>","detailedAnalysis":"<5-8 sentences covering comprehension, missing elements, writing quality, structure, voice, effort>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
+{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<10-15 detailed tips, each numbered 1. 2. 3. etc., each with problem statement, why it matters, exact fix, and example of better writing>","detailedAnalysis":"<10-15 sentences covering all specific errors, missing details, comprehension gaps, writing maturity, repetition issues, structural problems, and comparison to grade standard>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
 
   try {
     const client = new Anthropic({
@@ -661,7 +675,7 @@ Respond ONLY with valid JSON:
 
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 3500,  // increased to accommodate detailed feedback, corrections, validation, and analysis
+      max_tokens: 4500,  // increased to accommodate 10-15 suggestions, 10-15 corrections, and comprehensive analysis
       temperature: 0.2,  // lower = more consistent grading
       messages: [
         {
