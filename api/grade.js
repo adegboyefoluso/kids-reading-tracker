@@ -332,7 +332,9 @@ Based on their reading history, recommend exactly 5 books they would likely enjo
 
 For each recommendation, write one short, enthusiastic sentence (max 15 words) explaining why they'll love it — written directly to the child in a fun encouraging tone.
 
-Respond ONLY with valid JSON:
+CRITICAL: Respond ONLY with valid, well-formed JSON (no extra text before or after). Validate your JSON is complete and parseable before responding. Do not include markdown, code blocks, or explanations.
+
+JSON format:
 {"recommendations":[{"title":"<exact book title>","author":"<author full name>","reason":"<fun sentence for the child>"},...]}`
 
     try {
@@ -604,7 +606,9 @@ ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
 
-Respond ONLY with valid JSON:
+CRITICAL: Respond ONLY with valid, well-formed JSON (no extra text before or after). Validate your JSON is complete and parseable before responding. Do not include markdown, code blocks, or explanations.
+
+JSON format:
 {"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<10-15 detailed tips, each numbered 1. 2. 3. etc., each with problem statement, why it matters, exact fix, and example of better writing>","detailedAnalysis":"<10-15 sentences covering all specific errors, missing details, comprehension gaps, writing maturity, repetition issues, structural problems, and comparison to grade standard>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
 
     : `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
@@ -665,7 +669,9 @@ ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
 
-Respond ONLY with valid JSON:
+CRITICAL: Respond ONLY with valid, well-formed JSON (no extra text before or after). Validate your JSON is complete and parseable before responding. Do not include markdown, code blocks, or explanations.
+
+JSON format:
 {"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<10-15 detailed tips, each numbered 1. 2. 3. etc., each with problem statement, why it matters, exact fix, and example of better writing>","detailedAnalysis":"<10-15 sentences covering all specific errors, missing details, comprehension gaps, writing maturity, repetition issues, structural problems, and comparison to grade standard>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
 
   try {
@@ -686,12 +692,25 @@ Respond ONLY with valid JSON:
     })
 
     const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
+
+    // Try to extract JSON from response
     const match = text.match(/\{[\s\S]*\}/)
     if (!match) {
-      return res.status(500).json({ error: 'Could not parse grade response', raw: text.slice(0, 200) })
+      return res.status(500).json({ error: 'Could not find JSON in response', raw: text.slice(0, 500) })
     }
 
-    const gradeData = JSON.parse(match[0])
+    let gradeData
+    try {
+      gradeData = JSON.parse(match[0])
+    } catch (parseError) {
+      // If JSON parse fails, show the problematic section
+      return res.status(500).json({
+        error: `JSON parse error: ${parseError.message}`,
+        position: parseError.message.match(/position (\d+)/)?.[1],
+        context: match[0].slice(Math.max(0, parseError.message.match(/position (\d+)/)?.[1] - 100 || 0), Math.min(match[0].length, (parseError.message.match(/position (\d+)/)?.[1] || 0) + 100)),
+        fullResponse: match[0].slice(0, 1000)
+      })
+    }
     gradeData.bookFound = hasDescription
     gradeData.gradeLevel = gradeKey
     gradeData.bookDescriptionPreview = hasDescription ? bookDescription.slice(0, 250) : null
