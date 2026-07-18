@@ -1,0 +1,77 @@
+{
+  "interactionModel": {
+    "languageModel": {
+      "invocationName": "family rewards",
+      "intents": [
+        {
+          "name": "AMAZON.StopIntent"
+        },
+        {
+          "name": "AMAZON.CancelIntent"
+        },
+        {
+          "name": "AMAZON.HelpIntent"
+        },
+        {
+          "name": "IdentifyIntent",
+          "slots": [
+            {
+              "name": "readerName",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "I am {readerName}",
+            "my name is {readerName}",
+            "I'm {readerName}",
+            "this is {readerName}",
+            "sign in as {readerName}",
+            "it's {readerName}"
+          ]
+        },
+        {
+          "name": "LogChoreIntent",
+          "slots": [
+            {
+              "name": "choreName",
+              "type": "AMAZON.SearchQuery"
+            }
+          ],
+          "samples": [
+            "I did {choreName}",
+            "I finished {choreName}",
+            "I completed {choreName}",
+            "log {choreName}",
+            "mark {choreName} as done",
+            "{choreName} is done",
+            "I washed the dishes",
+            "I cleaned my room",
+            "I took out the trash"
+          ]
+        },
+        {
+          "name": "CheckBalanceIntent",
+          "samples": [
+            "what is my balance",
+            "how much money do I have",
+            "check my balance",
+            "what have I earned",
+            "show me my balance",
+            "how much did I earn"
+          ]
+        },
+        {
+          "name": "ListChoresIntent",
+          "samples": [
+            "list my chores",
+            "what chores do I have",
+            "what are the chores",
+            "show me the chores",
+            "what can I do",
+            "which chores are available"
+          ]
+        }
+      ]
+    }
+  }
+}
