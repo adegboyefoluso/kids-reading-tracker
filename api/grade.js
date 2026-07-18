@@ -583,25 +583,28 @@ Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
 ${accuracyInstructions}
 
 Also provide EXTREMELY DETAILED, COMPREHENSIVE FEEDBACK (this is the main point):
+CRITICAL: Grade ${gradeKey} expectations are: ${rubric.focus}
 - "feedback": 2-3 sentences highlighting strongest points (tone appropriate for Grade ${gradeKey}).
 - "suggestions": Return as a plain text string (NOT JSON array). 8-10 numbered tips (1. 2. 3. etc.), each on separate lines. For EACH tip:
   * State the EXACT problem from the summary
-  * Explain WHY it's wrong for Grade ${gradeKey}
-  * Show how to fix it with an example
-  * Show what BETTER writing looks like
+  * Explain WHY it's wrong for Grade ${gradeKey} (reference the expectations above, NOT lower grades)
+  * Show how to fix it with an example appropriate for Grade ${gradeKey} level
+  * Show what BETTER writing would look like for Grade ${gradeKey}
+  CRITICAL: Do NOT suggest Grade K-5 standards for higher grades. For Grade 12, expect near-college level. For Grade 6-8, expect middle school rigor.
   EXAMPLES OF SPECIFICITY:
   - NOT: "Improve grammar" BUT: "Line 2: 'I reed' should be 'I read'. Check all past-tense verbs. Found 8 more: caled→called, difrent→different, pepul→people, lerned→learned, etc."
   - NOT: "Add details" BUT: "You say 'they wanted to find love' but never name which character or describe their specific story. In 'All Out', include 'Jack and Lucia's story in 1920s Berlin where they risked everything to be together.'"
   - NOT: "Improve writing" BUT: "You write 'they was all brave' three times. Change to: 'Each character demonstrated remarkable courage despite systemic oppression.'"
-- "detailedAnalysis": COMPREHENSIVE 10-15 sentence analysis covering:
+- "detailedAnalysis": COMPREHENSIVE 10-15 sentence analysis as plain text. Cover:
   * SPECIFIC SPELLING/GRAMMAR ERRORS: List EVERY error found with line context and correction
-  * MISSING PLOT/CHARACTER DETAILS: Name SPECIFIC characters they missed (e.g., 'Did not mention Jack or Lucia's 1920s Berlin story, or Sam's coming-of-age narrative')
-  * COMPREHENSION LEVEL: For Grade 12, did they understand complex themes (intersectionality, historical context, queer identity) or just surface-level 'people want to be happy'?
-  * WRITING MATURITY ASSESSMENT: Is vocabulary collegiate-level? Does sentence structure vary? Do they cite specific text evidence? Is there a thesis or argument?
-  * REPETITION PROBLEMS: Point out exact repeated phrases ('they was brave' appears 3 times, 'I liked' appears 5 times) and suggest varied alternatives
-  * STRUCTURAL ISSUES: How do paragraphs connect? What transitions are missing? Why does it feel repetitive?
-  * COMPARISON TO STANDARD: For Grade 12, this reads like Grade 4-5 level. Specific examples of why and how to elevate it.
-  (Write DETAILED feedback that a teacher would give)
+  * MISSING PLOT/CHARACTER DETAILS: Name SPECIFIC characters and stories they missed
+  * COMPREHENSION LEVEL: Grade ${gradeKey} standard is: ${rubric.comprehensionFloor}. Did they meet it?
+  * WRITING MATURITY ASSESSMENT: For Grade ${gradeKey} (${rubric.name}), assess: ${rubric.focus}. Did they achieve this?
+  * REPETITION PROBLEMS: Point out exact repeated phrases and suggest varied alternatives
+  * STRUCTURAL ISSUES: How do paragraphs connect? What transitions are missing?
+  * COMPARISON TO ACTUAL GRADE STANDARD: Explicitly compare to Grade ${gradeKey} expectations (NOT lower grades). What would Grade ${gradeKey} writing need?
+  CRITICAL FOR GRADER: Do NOT measure Grade 12 work against Grade 5 standards. Grade 12 = near-college level. Grade 6-8 = middle school. Grade K-5 = elementary.
+  (Write DETAILED feedback that a Grade ${gradeKey} teacher would give)
 ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
