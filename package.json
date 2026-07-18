@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.28.0",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
     "firebase": "^10.13.0",

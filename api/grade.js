@@ -1,3 +1,5 @@
+import Anthropic from '@anthropic-ai/sdk'
+
 async function fetchWithTimeout(url, options = {}, ms = 3000) {
   const ctrl = new AbortController()
   const t = setTimeout(() => ctrl.abort(), ms)
@@ -441,7 +443,7 @@ Be thorough, warm, and talk TO me the whole time!`
     return res.status(400).json({ error: 'Unknown learnAction' })
   }
 
-  const { isbn, title, author, summary, description: providedDescription } = req.body || {}
+  const { isbn, title, author, summary, description: providedDescription, grade } = req.body || {}
   if (!title || !summary) return res.status(400).json({ error: 'Title and summary required' })
 
   // Use stored description if provided (most reliable — fetched at search time).
@@ -457,124 +459,183 @@ Be thorough, warm, and talk TO me the whole time!`
     bookDescription = bookResult?.description || null
   }
 
+  // GRADE-AWARE RUBRIC: expectations change by grade level
+  const GRADE_RUBRICS = {
+    K: { name: 'Kindergarten', focus: 'Understanding the story, basic sentences', forgive: 'Spelling, grammar, short responses', comprehensionFloor: 'Did they grasp the basic story?' },
+    1: { name: 'Grade 1', focus: 'Understanding story, naming characters, simple ideas', forgive: 'Spelling, punctuation, short sentences', comprehensionFloor: 'Did they understand who did what?' },
+    2: { name: 'Grade 2', focus: 'Main plot, characters, simple opinion', forgive: 'Run-on sentences, basic vocabulary', comprehensionFloor: 'Did they explain what happened and liked/disliked it?' },
+    3: { name: 'Grade 3', focus: 'Plot details, character actions, personal thoughts', forgive: 'Occasional grammar, developing voice', comprehensionFloor: 'Did they describe events and share their opinion?' },
+    4: { name: 'Grade 4', focus: 'Clear plot sequence, character descriptions, why they liked it', forgive: 'Minor grammar slips, informal tone', comprehensionFloor: 'Did they explain the sequence and their thoughts?' },
+    5: { name: 'Grade 5', focus: 'Complex plot, theme awareness, evidence from text', forgive: 'Occasional voice inconsistency', comprehensionFloor: 'Did they identify a theme and support it with details?' },
+    6: { name: 'Grade 6', focus: 'Structure, analysis, theme awareness, organized ideas', forgive: 'Minor mechanics, developing formality', comprehensionFloor: 'Did they analyze the book beyond plot summary?' },
+    7: { name: 'Grade 7', focus: 'Clear structure, textual analysis, evidence, interpretation', forgive: 'Occasional word choice awkwardness', comprehensionFloor: 'Can they support opinions with specific text?' },
+    8: { name: 'Grade 8', focus: 'Sophisticated analysis, clear argument structure, literary devices', forgive: 'Very minor mechanics', comprehensionFloor: 'Do they analyze literary elements and author intent?' },
+    9: { name: 'Grade 9', focus: 'Clear thesis, strong evidence, analytical depth, mature voice', forgive: 'Nearly nothing; expect high craft', comprehensionFloor: 'Is there a thesis with substantial support?' },
+    10: { name: 'Grade 10', focus: 'Complex analysis, nuanced argument, sophisticated vocabulary', forgive: 'Almost nothing; near-adult standard', comprehensionFloor: 'Is the analysis rigorous and well-evidenced?' },
+    11: { name: 'Grade 11', focus: 'Advanced literary analysis, critical thinking, mature style', forgive: 'Essentially nothing; college-prep standard', comprehensionFloor: 'Does it demonstrate scholarly thinking?' },
+    12: { name: 'Grade 12', focus: 'Near-adult critique, synthesis, originality', forgive: 'Nothing; college standard', comprehensionFloor: 'Is this publishable-quality analysis?' },
+  }
+
+  const gradeKey = grade || '5'  // default to Grade 5 if not specified
+  const rubric = GRADE_RUBRICS[gradeKey] || GRADE_RUBRICS['5']
+
   const aiDetectionInstruction = `
 Also assess whether this summary was written by the child themselves or generated/rewritten by AI.
-Look for these signs of AI authorship: overly formal or structured language for a young reader, perfect grammar with no natural mistakes, generic AI phrases (e.g. "In conclusion", "Furthermore", "It is worth noting"), sophisticated vocabulary inconsistent with a child's age, unnaturally balanced arguments, or lack of a genuine personal voice.
-Add to your JSON:
-- "aiDetection": integer 0–100 (0 = clearly written by the child, 100 = almost certainly AI-generated or AI-rewritten)
-- "aiWarning": null if likely human (aiDetection ≤ 55), otherwise a single plain-English sentence explaining the concern`
+Look for: overly formal/structured language for a ${gradeKey === 'K' ? 'young' : 'child'}, perfect grammar with no natural mistakes, generic AI phrases (e.g. "In conclusion", "Furthermore"), vocabulary too sophisticated for Grade ${gradeKey}, unnaturally balanced arguments, or lack of genuine personal voice.
+Add:
+- "aiDetection": integer 0–100 (0 = clearly child's own work, 100 = almost certainly AI)
+- "aiWarning": null if likely human (aiDetection ≤ 55), else one plain sentence`
 
   const correctionsInstruction = `
-- "corrections": identify up to 6 CLEAR, UNAMBIGUOUS errors in the reader's summary. STRICT RULES — do NOT flag any of these: split infinitives ("to not do" is acceptable modern English), informal or colloquial phrases that are contextually fine (e.g. "went live on the news" is correct), style preferences, punctuation choices that don't cause confusion, or anything debatable. ONLY flag: definite misspellings (e.g. "recieve"), clear subject-verb disagreement (e.g. "they was"), wrong tense shift, repeated/missing words, or sentence structure so broken it confuses meaning. For each genuine error, copy the EXACT text from the summary (do NOT paraphrase — copy verbatim), then provide a fix. Format: [{"quote":"<exact phrase from summary, max 10 words>","type":"spelling"|"grammar"|"structure","issue":"<one short phrase>","fix":"<corrected version>"}]. Return [] if no definite errors exist — it is better to return [] than to flag something debatable.`
+- "corrections": up to 6 CLEAR, UNAMBIGUOUS errors. Do NOT flag: split infinitives, informal phrases OK in context, style choices, or debatable items. ONLY flag: misspellings, subject-verb disagreement, tense shifts, repeated/missing words, or broken structure. Format: [{"quote":"<exact phrase, max 10 words>","type":"spelling"|"grammar"|"structure","issue":"<short phrase>","fix":"<corrected>"}]. Return [] if no errors.`
 
   const accuracyInstructions = `
-6. Accuracy — THIS IS THE MOST CRITICAL CHECK. Compare every claim in the reader's summary against your knowledge of this book.
+6. Accuracy — CRITICAL. Compare every claim against your knowledge of this book.
+• Wrong characters/events = 0–2
+• Wrong book entirely = 0–2
+• Wrong main character/premise/ending = 0–3
+• Right theme, wrong details = 3–5
+• Mostly correct, 1–2 minor issues = 6–8
+• Clearly matches the real book = 9–10
+CRITICAL: Perfect writing about the WRONG book scores 0–2. Writing quality ≠ accuracy.
+- "accuracyNote": One honest sentence naming specific differences or confirming correctness. Exception: if you have no knowledge of this book, set accuracy to null and note: "This book was not found in my knowledge base — accuracy could not be assessed."`
 
-STRICT ACCURACY SCORING:
-• If the reader described characters, plot events or outcomes that do NOT belong to this book → score 0 to 2
-• If the summary sounds like it is about a completely different book → score 0 to 2
-• If the reader got the main character, premise or ending wrong → score 0 to 3
-• If the general theme is right but important specific details are wrong → score 3 to 5
-• If mostly correct with only 1–2 minor inaccuracies → score 6 to 8
-• If clearly and specifically matches the real book → score 9 to 10
+  const validationInstructions = `
+7. BOOK VALIDATION — Critical check for educators and parents.
 
-CRITICAL: A beautifully written, grammatically perfect summary of the WRONG book must score 0–2 for accuracy. Writing quality does NOT affect the accuracy score. Do not give benefit of the doubt.
+Validate whether this child actually read the book they claim to have read. Check for:
 
-- "accuracyNote": One direct, honest sentence naming the specific difference between the summary and the real book, or confirming they got it right. Be concrete — name the characters or events that are wrong or right.
-  Exception: if you have NO knowledge of this specific book at all, set accuracy to null and accuracyNote to "This book was not found in my knowledge base — accuracy could not be assessed."`
+A. PLAGIARISM / AI REWRITING:
+   - Is the writing style too mature/polished for their grade?
+   - Do you see generic AI phrases ("In conclusion", "It is worth noting")?
+   - Is the vocabulary suspiciously advanced for a Grade ${gradeKey} child?
+   - Did they copy from an online summary/SparkNotes? (different tone, no personal voice)
+   → Set "likelyPlagiarized": true if suspicious, false if it reads like authentic kid writing
+
+B. ACTUALLY READ THE BOOK (not just blurb/movie summary):
+   - Do they mention scenes and details NOT in marketing blurbs?
+   - Do they reference specific chapters, page events, or character moments?
+   - Would someone who only read the back cover know these details?
+   → Set "likelyActuallyRead": true if deep knowledge evident, false if surface-level
+
+C. CONFUSED BOOK (right genre, wrong title):
+   - Are character names/plot points from a DIFFERENT book in the same genre?
+   - Does the summary describe a book that sounds similar but is actually wrong?
+   - Example: they describe "Harry Potter and the Sorcerer's Stone" but it's actually "Percy Jackson"
+   → Set "possiblyConfusedBook": true if you suspect this, false if confident it matches title
+
+D. MADE-UP PLOT POINTS:
+   - Are there major plot events that SOUND plausible but don't actually happen?
+   - Did they invent character arcs or endings?
+   → Set "madeUpPlotPoints": true if detected, false otherwise
+
+Add to JSON:
+- "validation": {
+    "likelyPlagiarized": <boolean>,
+    "likelyActuallyRead": <boolean>,
+    "possiblyConfusedBook": <boolean>,
+    "madeUpPlotPoints": <boolean>,
+    "validationWarning": <null if all checks pass, else string explaining the concern>
+  }`
 
   const prompt = hasDescription
-    ? `You are grading a young reader's book summary. You have a publisher/library description of the book AND your own trained knowledge of it — use both.
+    ? `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
+
+IMPORTANT: Your expectations must match their grade level. For Grade ${gradeKey}:
+- Expected focus: ${rubric.focus}
+- Forgivable errors: ${rubric.forgive}
+- Comprehension bar: ${rubric.comprehensionFloor}
 
 BOOK: "${title}" by ${author || 'unknown'}
 
 PUBLISHER/LIBRARY DESCRIPTION:
 ${bookDescription.slice(0, 1500)}
 
-Also draw on your own knowledge of this book (characters, plot details, themes, ending) to supplement the description above and verify the reader's summary as thoroughly as possible.
+Draw on your own knowledge of this book (characters, plot, themes, ending) to verify the reader's understanding.
 
 READER'S SUMMARY:
 ${summary}
 
-Grade on SIX criteria (each 0–10):
+Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
 
-1. Comprehension — Did they correctly understand the main plot, themes and key ideas of THIS book?
-2. Detail — Did they include specific characters, events and details that actually appear in this book?
-3. Reflection — Did they share a genuine personal opinion or what they personally learned?
-4. Grammar — Spelling, punctuation and sentence construction. Deduct marks clearly for errors.
-5. Structure — Is the summary well-organised with a clear beginning, middle and end? Does it flow logically?
+1. Comprehension — Did they understand the main plot, themes, key ideas of THIS book? (Calibrated to Grade ${gradeKey}: ${rubric.comprehensionFloor})
+2. Detail — Did they include specific characters, events, details that actually appear? (Grade ${gradeKey} standard)
+3. Reflection — Did they share genuine personal opinion or what they learned? (Age-appropriate depth)
+4. Grammar — Spelling, punctuation, sentence construction. Grade ${gradeKey} standard.
+5. Structure — Is it organized with clear beginning, middle, end? Does it flow? (Grade ${gradeKey} level)
 ${accuracyInstructions}
 
 Also provide:
-- "feedback": 2 short encouraging sentences about what they did well overall.
-- "suggestions": Exactly 3 specific, actionable improvement tips written encouragingly for a young reader. Number them 1. 2. 3. on separate lines.
+- "feedback": 2 short encouraging sentences about what they did well (tone appropriate for Grade ${gradeKey}).
+- "suggestions": Exactly 3 specific, actionable tips numbered 1. 2. 3. on separate lines (encouraging, age-appropriate).
 ${aiDetectionInstruction}
 ${correctionsInstruction}
+${validationInstructions}
 
 Respond ONLY with valid JSON:
-{"score":<comprehension+detail+reflection+grammar+structure total, integer 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 direct sentence or null>","feedback":"<2 encouraging sentences>","suggestions":"<3 tips numbered 1. 2. 3.>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[]}`
+{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2 sentences>","suggestions":"<3 tips, numbered>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
 
-    : `You are grading a young reader's book summary. No description was found in external databases, so use your own trained knowledge of the book to assess accuracy.
+    : `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
+
+IMPORTANT: Your expectations must match their grade level. For Grade ${gradeKey}:
+- Expected focus: ${rubric.focus}
+- Forgivable errors: ${rubric.forgive}
+- Comprehension bar: ${rubric.comprehensionFloor}
 
 BOOK: "${title}" by ${author || 'unknown'}
 
-Recall everything you know about this book from your training: its plot, characters, themes, key events and ending. Use that knowledge as your reference when comparing against the reader's summary.
+No external description found. Use your trained knowledge of this book: plot, characters, themes, key events, ending. Use that as your accuracy reference.
 
 READER'S SUMMARY:
 ${summary}
 
-Grade on SIX criteria (each 0–10):
+Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
 
-1. Comprehension — Did they correctly understand the main plot, themes and key ideas of THIS book?
-2. Detail — Did they include specific characters, events and details that actually appear in this book?
-3. Reflection — Did they share a genuine personal opinion or what they personally learned?
-4. Grammar — Spelling, punctuation and sentence construction. Deduct marks clearly for errors.
-5. Structure — Is the summary well-organised with a clear beginning, middle and end? Does it flow logically?
+1. Comprehension — Did they understand the main plot, themes, key ideas of THIS book? (Grade ${gradeKey}: ${rubric.comprehensionFloor})
+2. Detail — Did they include specific characters, events, details that actually appear? (Grade ${gradeKey} standard)
+3. Reflection — Did they share genuine personal opinion or what they learned? (Age-appropriate depth)
+4. Grammar — Spelling, punctuation, sentence construction. Grade ${gradeKey} standard.
+5. Structure — Is it organized with clear beginning, middle, end? Does it flow? (Grade ${gradeKey} level)
 ${accuracyInstructions}
 
 Also provide:
-- "feedback": 2 short encouraging sentences about what they did well overall.
-- "suggestions": Exactly 3 specific, actionable improvement tips written encouragingly for a young reader. Number them 1. 2. 3. on separate lines.
+- "feedback": 2 short encouraging sentences about what they did well (tone for Grade ${gradeKey}).
+- "suggestions": Exactly 3 specific, actionable tips numbered 1. 2. 3. on separate lines (age-appropriate).
 ${aiDetectionInstruction}
 ${correctionsInstruction}
+${validationInstructions}
 
 Respond ONLY with valid JSON:
-{"score":<comprehension+detail+reflection+grammar+structure total, integer 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 direct sentence or null>","feedback":"<2 encouraging sentences>","suggestions":"<3 tips numbered 1. 2. 3.>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[]}`
+{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2 sentences>","suggestions":"<3 tips, numbered>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
 
   try {
-    const response = await fetchWithTimeout(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.1,   // lower = more consistent / less lenient
-          max_tokens: 1200,
-          response_format: { type: 'json_object' },
-        }),
-      },
-      8000
-    )
+    const client = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    })
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}))
-      return res.status(500).json({ error: err.error?.message || 'Grading call failed' })
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1500,
+      temperature: 0.2,  // lower = more consistent grading
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    })
+
+    const text = response.content[0]?.type === 'text' ? response.content[0].text : ''
+    const match = text.match(/\{[\s\S]*\}/)
+    if (!match) {
+      return res.status(500).json({ error: 'Could not parse grade response', raw: text.slice(0, 200) })
     }
 
-    const data = await response.json()
-    const text = data.choices?.[0]?.message?.content || ''
-    const match = text.match(/\{[\s\S]*\}/)
-    if (!match) return res.status(500).json({ error: 'Could not parse grade response' })
-    const grade = JSON.parse(match[0])
-    grade.bookFound = hasDescription
-    // Return a preview of what description was used — admin can verify
-    grade.bookDescriptionPreview = hasDescription ? bookDescription.slice(0, 250) : null
-    return res.status(200).json(grade)
+    const gradeData = JSON.parse(match[0])
+    gradeData.bookFound = hasDescription
+    gradeData.gradeLevel = gradeKey
+    gradeData.bookDescriptionPreview = hasDescription ? bookDescription.slice(0, 250) : null
+    return res.status(200).json(gradeData)
   } catch (e) {
     return res.status(500).json({ error: e.message })
   }
