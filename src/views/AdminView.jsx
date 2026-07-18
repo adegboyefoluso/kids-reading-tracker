@@ -145,7 +145,7 @@ function AddReaderModal({ onDone, onClose }) {
 }
 
 // ── Book summary + grade + chat modal ─────────────────────────────────────
-function BookSummaryModal({ book, onClose, initialTab }) {
+function BookSummaryModal({ book, onClose, initialTab, readers = [] }) {
   const session = getSession()
   const [retrying, setRetrying] = useState(false)
   const [retryError, setRetryError] = useState(null)
@@ -155,6 +155,10 @@ function BookSummaryModal({ book, onClose, initialTab }) {
   const [chatSending, setChatSending] = useState(false)
   const [localMsgs, setLocalMsgs] = useState(null)
   const [localCanResubmit, setLocalCanResubmit] = useState(null)
+
+  // Get reader grade for grading API
+  const reader = book?.readerId ? readers.find(r => r.id === book.readerId) : null
+  const readerGrade = reader?.grade || '5'  // default to grade 5 if not found
 
   // Keep synced if parent re-renders with updated grade
   useEffect(() => { setLiveBook(book) }, [book])
@@ -202,7 +206,7 @@ function BookSummaryModal({ book, onClose, initialTab }) {
       const res = await fetch('/api/grade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isbn: b.isbn, title: b.title, author: b.author, summary: b.review, description: b.description || '' }),
+        body: JSON.stringify({ isbn: b.isbn, title: b.title, author: b.author, summary: b.review, description: b.description || '', grade: readerGrade }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -843,7 +847,7 @@ export default function AdminView() {
   return (
     <div className="admin-view">
       {viewBook && (
-        <BookSummaryModal book={viewBook} initialTab={viewBookTab} onClose={() => { setViewBook(null); setViewBookTab('grade') }} />
+        <BookSummaryModal book={viewBook} readers={readers} initialTab={viewBookTab} onClose={() => { setViewBook(null); setViewBookTab('grade') }} />
       )}
       {editBook && (
         <EditModal book={editBook} readers={readers} onSave={() => setEditBook(null)} onClose={() => setEditBook(null)} />

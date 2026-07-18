@@ -799,9 +799,11 @@ function BookSummaryModal({ book, onClose, onEdit, onResubmit }) {
 
 // ── Resubmit modal (reader rewrites summary after admin unlocks it) ─────────
 function ResubmitModal({ book, onDone, onClose }) {
+  const session = getSession()
   const [newReview, setNewReview] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const readerGrade = session?.grade || '5'  // get reader grade from session, default to 5
 
   function wc(t) { return t.trim() ? t.trim().split(/\s+/).length : 0 }
   const words = wc(newReview)
@@ -817,7 +819,7 @@ function ResubmitModal({ book, onDone, onClose }) {
       if (rsess?.familyId) notifySubmitted({ familyId: rsess.familyId, bookTitle: book.title, readerName: rsess.name, bookId: book.id })
       // Trigger regrading in background
       fetch('/api/grade', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isbn: book.isbn, title: book.title, author: book.author, summary: newReview.trim(), description: book.description || '' }) })
+        body: JSON.stringify({ isbn: book.isbn, title: book.title, author: book.author, summary: newReview.trim(), description: book.description || '', grade: readerGrade }) })
         .then(r => r.ok ? r.json() : null)
         .then(g => g && updateBook(book.id, { gradeScore: g.score, gradeFeedback: g.feedback, gradeComprehension: g.comprehension, gradeDetail: g.detail, gradeReflection: g.reflection, gradeGrammar: g.grammar ?? 0, gradeStructure: g.structure ?? 0, gradeSuggestions: g.suggestions || '', gradeAccuracy: g.accuracy ?? -1, gradeAccuracyNote: g.accuracyNote || '', gradeBookFound: g.bookFound ? 1 : 0, bookDescriptionPreview: g.bookDescriptionPreview || '', aiDetection: g.aiDetection ?? 0, aiWarning: g.aiWarning || '', gradeCorrections: JSON.stringify(g.corrections || []) }))
         .catch(() => {})
