@@ -487,7 +487,7 @@ Add:
 - "aiWarning": null if likely human (aiDetection ≤ 55), else one plain sentence`
 
   const correctionsInstruction = `
-- "corrections": up to 6 CLEAR, UNAMBIGUOUS errors. Do NOT flag: split infinitives, informal phrases OK in context, style choices, or debatable items. ONLY flag: misspellings, subject-verb disagreement, tense shifts, repeated/missing words, or broken structure. Format: [{"quote":"<exact phrase, max 10 words>","type":"spelling"|"grammar"|"structure","issue":"<short phrase>","fix":"<corrected>"}]. Return [] if no errors.`
+- "corrections": identify up to 15 CLEAR, UNAMBIGUOUS errors (be thorough). Do NOT flag: split infinitives, informal phrases OK in context, style choices, or debatable items. ONLY flag: misspellings, subject-verb disagreement, tense shifts, repeated/missing words, run-on sentences, or broken structure. For each error, copy EXACT text from summary and provide correction. Format: [{"quote":"<exact phrase>","type":"spelling"|"grammar"|"structure"|"punctuation"|"clarity","lineContext":"<surrounding 5-10 words for reference>","issue":"<specific problem>","fix":"<corrected version>","explanation":"<why this matters>"}]. Return [] if no errors. AIM FOR THOROUGHNESS - catch all real errors.`
 
   const accuracyInstructions = `
 6. Accuracy — CRITICAL. Compare every claim against your knowledge of this book.
@@ -580,15 +580,23 @@ Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
 5. Structure — Is it organized with clear beginning, middle, end? Does it flow? (Grade ${gradeKey} level)
 ${accuracyInstructions}
 
-Also provide:
-- "feedback": 2 short encouraging sentences about what they did well (tone appropriate for Grade ${gradeKey}).
-- "suggestions": Exactly 3 specific, actionable tips numbered 1. 2. 3. on separate lines (encouraging, age-appropriate).
+Also provide DETAILED FEEDBACK:
+- "feedback": 2-3 sentences about what they did well (tone appropriate for Grade ${gradeKey}).
+- "suggestions": Exactly 5-7 specific, actionable improvement tips numbered 1. 2. 3. etc. on separate lines (detailed, with concrete examples where helpful).
+- "detailedAnalysis": A comprehensive analysis covering:
+  * COMPREHENSION: What they understood well vs. missed about the plot, characters, themes
+  * MISSING ELEMENTS: Specific plot points, character details, or events they should have included but didn't
+  * WRITING QUALITY: Clarity issues, confusing sentences, unclear explanations (be specific)
+  * STRUCTURE & FLOW: How well-organized is it? Does it have clear beginning/middle/end? Any abrupt transitions?
+  * VOICE & ENGAGEMENT: Does it sound like the child's own voice? Is it engaging or dull? Why?
+  * EFFORT & ENGAGEMENT: Overall impression of how carefully they wrote this
+  (Write as 5-8 sentences of honest, constructive feedback)
 ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
 
 Respond ONLY with valid JSON:
-{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2 sentences>","suggestions":"<3 tips, numbered>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
+{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<5-7 detailed tips, numbered>","detailedAnalysis":"<5-8 sentences covering comprehension, missing elements, writing quality, structure, voice, effort>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
 
     : `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
 
@@ -628,15 +636,23 @@ Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
 5. Structure — Is it organized with clear beginning, middle, end? Does it flow? (Grade ${gradeKey} level)
 ${accuracyInstructions}
 
-Also provide:
-- "feedback": 2 short encouraging sentences about what they did well (tone for Grade ${gradeKey}).
-- "suggestions": Exactly 3 specific, actionable tips numbered 1. 2. 3. on separate lines (age-appropriate).
+Also provide DETAILED FEEDBACK:
+- "feedback": 2-3 sentences about what they did well (tone for Grade ${gradeKey}).
+- "suggestions": Exactly 5-7 specific, actionable improvement tips numbered 1. 2. 3. etc. on separate lines (detailed, with examples).
+- "detailedAnalysis": A comprehensive analysis covering:
+  * COMPREHENSION: What they understood well vs. missed about the plot, characters, themes
+  * MISSING ELEMENTS: Specific plot points, character details, or events they should have included but didn't
+  * WRITING QUALITY: Clarity issues, confusing sentences, unclear explanations (be specific)
+  * STRUCTURE & FLOW: How well-organized is it? Does it have clear beginning/middle/end? Any abrupt transitions?
+  * VOICE & ENGAGEMENT: Does it sound like the child's own voice? Is it engaging or dull? Why?
+  * EFFORT & ENGAGEMENT: Overall impression of how carefully they wrote this
+  (Write as 5-8 sentences of honest, constructive feedback)
 ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
 
 Respond ONLY with valid JSON:
-{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2 sentences>","suggestions":"<3 tips, numbered>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
+{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<5-7 detailed tips, numbered>","detailedAnalysis":"<5-8 sentences covering comprehension, missing elements, writing quality, structure, voice, effort>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
 
   try {
     const client = new Anthropic({
@@ -645,7 +661,7 @@ Respond ONLY with valid JSON:
 
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2500,  // increased from 1500 to ensure validation fields are included
+      max_tokens: 3500,  // increased to accommodate detailed feedback, corrections, validation, and analysis
       temperature: 0.2,  // lower = more consistent grading
       messages: [
         {
