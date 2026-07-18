@@ -366,9 +366,13 @@ function BookSummaryModal({ book, onClose, initialTab, readers = [] }) {
               )}
               {b.gradeSuggestions && (
                 <div style={{ background: '#111111', border: '1px solid #1a2a4a', borderRadius: 8, padding: '12px 14px', marginTop: 12 }}>
-                  <div style={{ fontSize: '0.72rem', color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, marginBottom: 8 }}>💡 Suggestions for improvement</div>
-                  {b.gradeSuggestions.split('\n').filter(s => s.trim()).map((tip, i) => (
-                    <p key={i} style={{ color: '#93c5fd', fontSize: '0.82rem', lineHeight: 1.6, margin: '0 0 6px' }}>{tip}</p>
+                  <div style={{ fontSize: '0.72rem', color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, marginBottom: 12 }}>💡 Suggestions for improvement</div>
+                  {b.gradeSuggestions.split('\n\n').map((section, i) => (
+                    <div key={i} style={{ marginBottom: section.trim() ? 14 : 0 }}>
+                      {section.split('\n').filter(s => s.trim()).map((tip, j) => (
+                        <p key={j} style={{ color: '#93c5fd', fontSize: '0.82rem', lineHeight: 1.7, margin: '0 0 4px', fontFamily: 'monospace' }}>{tip}</p>
+                      ))}
+                    </div>
                   ))}
                 </div>
               )}

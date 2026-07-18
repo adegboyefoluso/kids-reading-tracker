@@ -585,11 +585,17 @@ ${accuracyInstructions}
 Also provide FOCUSED, GRADE-CALIBRATED FEEDBACK:
 GRADE ${gradeKey} EXPECTATIONS: ${rubric.focus}
 - "feedback": 2-3 sentences (be concise).
-- "suggestions": 8-10 numbered tips, each 1-3 sentences. For EACH:
+- "suggestions": 8-10 numbered tips, each 1-3 sentences. Format with blank lines between each tip for readability:
   1. State the EXACT problem (quote from summary)
   2. One sentence explaining why it's wrong for Grade ${gradeKey}
   3. One sentence showing the fix
-  CRITICAL: Do NOT suggest Grade K-5 standards for higher grades. Grade 12=college-level. Grade 6-8=middle school. Keep each tip SHORT.
+
+  Format example:
+  1. "I reed" should be "I read". This is a basic past-tense verb. Fix: Check all past-tense verbs throughout.
+
+  2. You never mention specific characters. Grade 12 needs textual evidence. Fix: Name Jack and Lucia's story in Berlin.
+
+  CRITICAL: Do NOT suggest Grade K-5 standards. Each tip on separate numbered line. BLANK LINE between tips.
 - "detailedAnalysis": Exactly 8-12 sentences (not more). Cover ONLY the most important issues:
   1. Main spelling/grammar errors (2 sentences max)
   2. Missing characters/plot points (1 sentence)
