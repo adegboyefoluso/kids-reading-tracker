@@ -582,29 +582,41 @@ Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
 5. Structure — Is it organized with clear beginning, middle, end? Does it flow? (Grade ${gradeKey} level)
 ${accuracyInstructions}
 
-Also provide FOCUSED, GRADE-CALIBRATED FEEDBACK:
+Also provide DETAILED, EDUCATIONAL FEEDBACK FOR LEARNING:
 GRADE ${gradeKey} EXPECTATIONS: ${rubric.focus}
-- "feedback": 2-3 sentences (be concise).
-- "suggestions": 8-10 numbered tips, each 1-3 sentences. Format with blank lines between each tip for readability:
+- "feedback": 2-3 sentences highlighting strengths.
+- "suggestions": 6-8 numbered tips (fewer but MORE detailed). Each tip should be 3-5 sentences to help reader LEARN:
   1. State the EXACT problem (quote from summary)
-  2. One sentence explaining why it's wrong for Grade ${gradeKey}
-  3. One sentence showing the fix
+  2. Explain WHY this matters for Grade ${gradeKey} (educational context)
+  3. Show what BETTER writing looks like (example)
+  4. One sentence on how to practice/improve this
 
   Format example:
-  1. "I reed" should be "I read". This is a basic past-tense verb. Fix: Check all past-tense verbs throughout.
+  1. "I reed" should be "I read". Basic spelling of common words matters because teachers and colleges judge competence partly on accuracy. Fix: "I read a book called All Out." This shows mastery. Practice: Use spell-check, read aloud to catch errors.
 
-  2. You never mention specific characters. Grade 12 needs textual evidence. Fix: Name Jack and Lucia's story in Berlin.
+  2. You mention "they wanted to find love" but never name which character. Grade 12 requires textual evidence—specific examples from the text, not vague summaries. Better: "Jack risked everything to reunite with his partner in Berlin, showing love's power despite society's rejection." Practice: Cite specific character names and story details.
 
-  CRITICAL: Do NOT suggest Grade K-5 standards. Each tip on separate numbered line. BLANK LINE between tips.
-- "detailedAnalysis": Exactly 8-12 sentences (not more). Cover ONLY the most important issues:
-  1. Main spelling/grammar errors (2 sentences max)
-  2. Missing characters/plot points (1 sentence)
-  3. Does comprehension meet Grade ${gradeKey} standard? (1 sentence)
-  4. Does writing maturity meet Grade ${gradeKey}? (1 sentence)
-  5. Biggest structural problem (1 sentence)
-  6. Main repetition issue (1 sentence)
-  7-8. Two-sentence summary of how to elevate to Grade ${gradeKey} level
-  CRITICAL: Grade 12 work is measured against college standards, not Grade 5. Be concise. NO special characters like braces {}.
+  CRITICAL RULES:
+  - Do NOT suggest Grade K-5 standards for higher grades
+  - Each tip on new numbered line
+  - BLANK LINE between tips
+  - Escape special characters: use apostrophes carefully, no unescaped quotes
+  - Focus on helping reader LEARN why the error matters
+
+- "detailedAnalysis": 10-15 sentences providing comprehensive learning feedback. Cover in order:
+  1-2. Specific spelling/grammar errors with line numbers and corrections (help reader understand patterns)
+  3-4. Missing characters/plot points and WHY specificity matters for Grade ${gradeKey}
+  5-6. Assessment: Does comprehension meet Grade ${gradeKey} standard? What evidence shows this?
+  7-8. Assessment: Does writing maturity meet Grade ${gradeKey}? Why or why not?
+  9-10. Structural issues (paragraph organization, transitions) and how to fix them
+  11-12. Repetition problems (exact repeated phrases) and suggestion for varied alternatives
+  13-15. Overall summary: What would elevate this to Grade ${gradeKey} level? What's the reader's biggest learning opportunity?
+
+  CRITICAL:
+  - Grade 12 = college standards, NOT Grade 5
+  - Be detailed enough to TEACH, concise enough to fit in JSON
+  - Escape special characters carefully
+  - Each point should help reader LEARN
 ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
@@ -732,7 +744,7 @@ Remember: Keep all text fields SHORT. Feedback max 3 sentences. Analysis max 12 
 
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2800,  // reduced now that we're asking for concise suggestions (8-10 + 8-12 analysis)
+      max_tokens: 3500,  // increased for more detailed suggestions (6-8 x 3-5 sentences) + comprehensive analysis (10-15 sentences)
       temperature: 0.2,  // lower = more consistent grading
       messages: [
         {
