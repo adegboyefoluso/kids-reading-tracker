@@ -584,10 +584,10 @@ ${accuracyInstructions}
 
 Also provide EXTREMELY DETAILED, COMPREHENSIVE FEEDBACK (this is the main point):
 - "feedback": 2-3 sentences highlighting strongest points (tone appropriate for Grade ${gradeKey}).
-- "suggestions": 10-15 HIGHLY SPECIFIC, ACTIONABLE tips numbered 1-15+ on separate lines. For EACH:
-  * State the EXACT problem (quote from summary if applicable)
+- "suggestions": Return as a plain text string (NOT JSON array). 8-10 numbered tips (1. 2. 3. etc.), each on separate lines. For EACH tip:
+  * State the EXACT problem from the summary
   * Explain WHY it's wrong for Grade ${gradeKey}
-  * Show EXACTLY how to fix it with an example
+  * Show how to fix it with an example
   * Show what BETTER writing looks like
   EXAMPLES OF SPECIFICITY:
   - NOT: "Improve grammar" BUT: "Line 2: 'I reed' should be 'I read'. Check all past-tense verbs. Found 8 more: caled→called, difrent→different, pepul→people, lerned→learned, etc."
@@ -608,8 +608,8 @@ ${validationInstructions}
 
 CRITICAL: Respond ONLY with valid, well-formed JSON (no extra text before or after). Validate your JSON is complete and parseable before responding. Do not include markdown, code blocks, or explanations.
 
-JSON format:
-{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<10-15 detailed tips, each numbered 1. 2. 3. etc., each with problem statement, why it matters, exact fix, and example of better writing>","detailedAnalysis":"<10-15 sentences covering all specific errors, missing details, comprehension gaps, writing maturity, repetition issues, structural problems, and comparison to grade standard>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
+JSON format (keep all strings plain text, escape quotes and newlines properly):
+{"score":<0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<sentence or null>","feedback":"<plain text>","suggestions":"<plain text numbered list 1. 2. 3.>","detailedAnalysis":"<plain text 8-12 sentences>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<true or false>,"likelyActuallyRead":<true or false>,"possiblyConfusedBook":<true or false>,"madeUpPlotPoints":<true or false>,"validationWarning":<null or string>}}`
 
     : `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
 
@@ -651,10 +651,10 @@ ${accuracyInstructions}
 
 Also provide EXTREMELY DETAILED, COMPREHENSIVE FEEDBACK (this is the main point):
 - "feedback": 2-3 sentences highlighting strongest points (tone for Grade ${gradeKey}).
-- "suggestions": 10-15 HIGHLY SPECIFIC, ACTIONABLE tips numbered 1-15+ on separate lines. For EACH:
-  * State the EXACT problem (quote from summary if applicable)
+- "suggestions": Return as a plain text string (NOT JSON array). 8-10 numbered tips (1. 2. 3. etc.), each on separate lines. For EACH tip:
+  * State the EXACT problem from the summary
   * Explain WHY it's wrong for Grade ${gradeKey}
-  * Show EXACTLY how to fix it with an example
+  * Show how to fix it with an example
   * Show what BETTER writing looks like
 - "detailedAnalysis": COMPREHENSIVE 10-15 sentence analysis covering:
   * SPECIFIC SPELLING/GRAMMAR ERRORS: List EVERY error found with line context and correction
@@ -671,8 +671,8 @@ ${validationInstructions}
 
 CRITICAL: Respond ONLY with valid, well-formed JSON (no extra text before or after). Validate your JSON is complete and parseable before responding. Do not include markdown, code blocks, or explanations.
 
-JSON format:
-{"score":<comprehension+detail+reflection+grammar+structure total, 0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<1 sentence or null>","feedback":"<2-3 sentences>","suggestions":"<10-15 detailed tips, each numbered 1. 2. 3. etc., each with problem statement, why it matters, exact fix, and example of better writing>","detailedAnalysis":"<10-15 sentences covering all specific errors, missing details, comprehension gaps, writing maturity, repetition issues, structural problems, and comparison to grade standard>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<boolean>,"likelyActuallyRead":<boolean>,"possiblyConfusedBook":<boolean>,"madeUpPlotPoints":<boolean>,"validationWarning":<null or string>}}`
+JSON format (keep all strings plain text, escape quotes and newlines properly):
+{"score":<0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<sentence or null>","feedback":"<plain text>","suggestions":"<plain text numbered list 1. 2. 3.>","detailedAnalysis":"<plain text 8-12 sentences>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<true or false>,"likelyActuallyRead":<true or false>,"possiblyConfusedBook":<true or false>,"madeUpPlotPoints":<true or false>,"validationWarning":<null or string>}}`
 
   try {
     const client = new Anthropic({
