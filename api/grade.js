@@ -582,37 +582,55 @@ Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
 5. Structure — Is it organized with clear beginning, middle, end? Does it flow? (Grade ${gradeKey} level)
 ${accuracyInstructions}
 
-Also provide EXTREMELY DETAILED, COMPREHENSIVE FEEDBACK (this is the main point):
-CRITICAL: Grade ${gradeKey} expectations are: ${rubric.focus}
-- "feedback": 2-3 sentences highlighting strongest points (tone appropriate for Grade ${gradeKey}).
-- "suggestions": Return as a plain text string (NOT JSON array). 8-10 numbered tips (1. 2. 3. etc.), each on separate lines. For EACH tip:
-  * State the EXACT problem from the summary
-  * Explain WHY it's wrong for Grade ${gradeKey} (reference the expectations above, NOT lower grades)
-  * Show how to fix it with an example appropriate for Grade ${gradeKey} level
-  * Show what BETTER writing would look like for Grade ${gradeKey}
-  CRITICAL: Do NOT suggest Grade K-5 standards for higher grades. For Grade 12, expect near-college level. For Grade 6-8, expect middle school rigor.
-  EXAMPLES OF SPECIFICITY:
-  - NOT: "Improve grammar" BUT: "Line 2: 'I reed' should be 'I read'. Check all past-tense verbs. Found 8 more: caled→called, difrent→different, pepul→people, lerned→learned, etc."
-  - NOT: "Add details" BUT: "You say 'they wanted to find love' but never name which character or describe their specific story. In 'All Out', include 'Jack and Lucia's story in 1920s Berlin where they risked everything to be together.'"
-  - NOT: "Improve writing" BUT: "You write 'they was all brave' three times. Change to: 'Each character demonstrated remarkable courage despite systemic oppression.'"
-- "detailedAnalysis": COMPREHENSIVE 10-15 sentence analysis as plain text. Cover:
-  * SPECIFIC SPELLING/GRAMMAR ERRORS: List EVERY error found with line context and correction
-  * MISSING PLOT/CHARACTER DETAILS: Name SPECIFIC characters and stories they missed
-  * COMPREHENSION LEVEL: Grade ${gradeKey} standard is: ${rubric.comprehensionFloor}. Did they meet it?
-  * WRITING MATURITY ASSESSMENT: For Grade ${gradeKey} (${rubric.name}), assess: ${rubric.focus}. Did they achieve this?
-  * REPETITION PROBLEMS: Point out exact repeated phrases and suggest varied alternatives
-  * STRUCTURAL ISSUES: How do paragraphs connect? What transitions are missing?
-  * COMPARISON TO ACTUAL GRADE STANDARD: Explicitly compare to Grade ${gradeKey} expectations (NOT lower grades). What would Grade ${gradeKey} writing need?
-  CRITICAL FOR GRADER: Do NOT measure Grade 12 work against Grade 5 standards. Grade 12 = near-college level. Grade 6-8 = middle school. Grade K-5 = elementary.
-  (Write DETAILED feedback that a Grade ${gradeKey} teacher would give)
+Also provide FOCUSED, GRADE-CALIBRATED FEEDBACK:
+GRADE ${gradeKey} EXPECTATIONS: ${rubric.focus}
+- "feedback": 2-3 sentences (be concise).
+- "suggestions": 8-10 numbered tips, each 1-3 sentences. For EACH:
+  1. State the EXACT problem (quote from summary)
+  2. One sentence explaining why it's wrong for Grade ${gradeKey}
+  3. One sentence showing the fix
+  CRITICAL: Do NOT suggest Grade K-5 standards for higher grades. Grade 12=college-level. Grade 6-8=middle school. Keep each tip SHORT.
+- "detailedAnalysis": Exactly 8-12 sentences (not more). Cover ONLY the most important issues:
+  1. Main spelling/grammar errors (2 sentences max)
+  2. Missing characters/plot points (1 sentence)
+  3. Does comprehension meet Grade ${gradeKey} standard? (1 sentence)
+  4. Does writing maturity meet Grade ${gradeKey}? (1 sentence)
+  5. Biggest structural problem (1 sentence)
+  6. Main repetition issue (1 sentence)
+  7-8. Two-sentence summary of how to elevate to Grade ${gradeKey} level
+  CRITICAL: Grade 12 work is measured against college standards, not Grade 5. Be concise. NO special characters like braces {}.
 ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
 
-CRITICAL: Respond ONLY with valid, well-formed JSON (no extra text before or after). Validate your JSON is complete and parseable before responding. Do not include markdown, code blocks, or explanations.
+CRITICAL: Return ONLY valid JSON, nothing else. No markdown, no backticks, no extra text.
 
-JSON format (keep all strings plain text, escape quotes and newlines properly):
-{"score":<0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<sentence or null>","feedback":"<plain text>","suggestions":"<plain text numbered list 1. 2. 3.>","detailedAnalysis":"<plain text 8-12 sentences>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<true or false>,"likelyActuallyRead":<true or false>,"possiblyConfusedBook":<true or false>,"madeUpPlotPoints":<true or false>,"validationWarning":<null or string>}}`
+Use this exact JSON structure (strings MUST have special characters escaped):
+{
+  "score": <number 0-50>,
+  "comprehension": <0-10>,
+  "detail": <0-10>,
+  "reflection": <0-10>,
+  "grammar": <0-10>,
+  "structure": <0-10>,
+  "accuracy": <0-10 or null>,
+  "accuracyNote": "<short sentence or null>",
+  "feedback": "<2-3 sentences only>",
+  "suggestions": "<8-10 numbered tips, separated by newlines>",
+  "detailedAnalysis": "<8-12 sentences only>",
+  "aiDetection": <0-100>,
+  "aiWarning": <null or "single sentence">,
+  "corrections": [],
+  "validation": {
+    "likelyPlagiarized": <true or false>,
+    "likelyActuallyRead": <true or false>,
+    "possiblyConfusedBook": <true or false>,
+    "madeUpPlotPoints": <true or false>,
+    "validationWarning": <null or "short sentence">
+  }
+}
+
+Remember: Keep all text fields SHORT. Feedback max 3 sentences. Analysis max 12 sentences. No special characters like curly braces or unescaped quotes in strings.`
 
     : `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
 
@@ -672,10 +690,34 @@ ${aiDetectionInstruction}
 ${correctionsInstruction}
 ${validationInstructions}
 
-CRITICAL: Respond ONLY with valid, well-formed JSON (no extra text before or after). Validate your JSON is complete and parseable before responding. Do not include markdown, code blocks, or explanations.
+CRITICAL: Return ONLY valid JSON, nothing else. No markdown, no backticks, no extra text.
 
-JSON format (keep all strings plain text, escape quotes and newlines properly):
-{"score":<0-50>,"comprehension":<0-10>,"detail":<0-10>,"reflection":<0-10>,"grammar":<0-10>,"structure":<0-10>,"accuracy":<0-10 or null>,"accuracyNote":"<sentence or null>","feedback":"<plain text>","suggestions":"<plain text numbered list 1. 2. 3.>","detailedAnalysis":"<plain text 8-12 sentences>","aiDetection":<0-100>,"aiWarning":<null or string>,"corrections":[],"validation":{"likelyPlagiarized":<true or false>,"likelyActuallyRead":<true or false>,"possiblyConfusedBook":<true or false>,"madeUpPlotPoints":<true or false>,"validationWarning":<null or string>}}`
+Use this exact JSON structure (strings MUST have special characters escaped):
+{
+  "score": <number 0-50>,
+  "comprehension": <0-10>,
+  "detail": <0-10>,
+  "reflection": <0-10>,
+  "grammar": <0-10>,
+  "structure": <0-10>,
+  "accuracy": <0-10 or null>,
+  "accuracyNote": "<short sentence or null>",
+  "feedback": "<2-3 sentences only>",
+  "suggestions": "<8-10 numbered tips, separated by newlines>",
+  "detailedAnalysis": "<8-12 sentences only>",
+  "aiDetection": <0-100>,
+  "aiWarning": <null or "single sentence">,
+  "corrections": [],
+  "validation": {
+    "likelyPlagiarized": <true or false>,
+    "likelyActuallyRead": <true or false>,
+    "possiblyConfusedBook": <true or false>,
+    "madeUpPlotPoints": <true or false>,
+    "validationWarning": <null or "short sentence">
+  }
+}
+
+Remember: Keep all text fields SHORT. Feedback max 3 sentences. Analysis max 12 sentences. No special characters like curly braces or unescaped quotes in strings.`
 
   try {
     const client = new Anthropic({
@@ -684,7 +726,7 @@ JSON format (keep all strings plain text, escape quotes and newlines properly):
 
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4500,  // increased to accommodate 10-15 suggestions, 10-15 corrections, and comprehensive analysis
+      max_tokens: 2800,  // reduced now that we're asking for concise suggestions (8-10 + 8-12 analysis)
       temperature: 0.2,  // lower = more consistent grading
       messages: [
         {
