@@ -1,6 +1,30 @@
+import admin from 'firebase-admin'
+
 const PROJECT = (process.env.VITE_FIREBASE_PROJECT_ID || '').replace(/^﻿/, '').trim()
 const KEY = (process.env.VITE_FIREBASE_API_KEY || '').replace(/^﻿/, '').trim()
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`
+
+// Initialize Firebase Admin SDK for auth operations
+let adminApp = null
+function getAdminAuth() {
+  if (!adminApp) {
+    try {
+      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+        : null
+
+      if (serviceAccount) {
+        adminApp = admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          projectId: PROJECT,
+        })
+      }
+    } catch (e) {
+      console.error('Failed to init Firebase Admin:', e.message)
+    }
+  }
+  return adminApp ? admin.auth(adminApp) : null
+}
 
 function toFS(obj) {
   const fields = {}
@@ -25,7 +49,23 @@ export default async function handler(req, res) {
     // ── Single-reader operations (PATCH / DELETE) when ?id= is present ──
     if (id) {
       if (req.method === 'DELETE') {
+        // Delete Firebase Auth user
+        const auth = getAdminAuth()
+        if (auth) {
+          try {
+            await auth.deleteUser(id)
+            console.log(`[delete-reader] Deleted auth user: ${id}`)
+          } catch (e) {
+            console.error(`[delete-reader] Failed to delete auth user ${id}:`, e.message)
+            // Continue with Firestore deletion even if auth deletion fails
+          }
+        } else {
+          console.warn('[delete-reader] Firebase Admin not initialized — skipping auth deletion')
+        }
+
+        // Delete Firestore reader document
         await fetch(`${FS}/readers/${id}?key=${KEY}`, { method: 'DELETE' })
+
         return res.status(200).json({ ok: true })
       }
 
