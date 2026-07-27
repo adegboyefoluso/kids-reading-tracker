@@ -714,6 +714,19 @@ export default async function handler(req, res) {
         }),
       })
 
+      // Send password reset email to user
+      try {
+        await fetch(`${AUTH}/accounts:sendOobCode?key=${KEY}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ requestType: 'PASSWORD_RESET', email }),
+        })
+        console.log(`[create-reader] Password reset email sent to ${email}`)
+      } catch (e) {
+        console.error(`[create-reader] Failed to send password reset email to ${email}:`, e.message)
+        // Don't block user creation if email fails
+      }
+
       return res.status(200).json({
         id: localId, name, email,
         emoji: emoji || '📚',
