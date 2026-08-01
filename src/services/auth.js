@@ -39,7 +39,7 @@ export async function resetPassword(email) {
   const res = await fetch('/api/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'reset-password', email }),
+    body: JSON.stringify({ action: 'send-reset-email', email }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || 'Reset failed')

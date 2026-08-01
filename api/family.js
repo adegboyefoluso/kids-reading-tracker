@@ -738,9 +738,27 @@ export default async function handler(req, res) {
         }),
       })
 
-      // Send welcome email via Resend with password change link
+      // Send welcome email via Resend with password reset token
       try {
-        const resetLink = `https://readershall.com/set-password?email=${encodeURIComponent(email)}`
+        // Generate reset token (same as send-reset-email in auth.js)
+        const resetToken = crypto.getRandomValues(new Uint8Array(16)).reduce((s, b) => s + b.toString(16).padStart(2, '0'), '')
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+        // Store token in Firestore
+        await fetch(`${FS}/passwordResets/${resetToken}?key=${KEY}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fields: {
+              email: { stringValue: email },
+              expiresAt: { stringValue: expiresAt },
+              used: { booleanValue: false }
+            }
+          })
+        })
+
+        // Send welcome email via Resend with set-password link
+        const resetLink = `https://readershall.com/set-password?token=${resetToken}`
         const html = emailShell(
           'Welcome to Reading Tracker!',
           `
