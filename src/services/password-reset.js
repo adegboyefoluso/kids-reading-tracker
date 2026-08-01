@@ -1,5 +1,5 @@
 export async function sendPasswordResetEmail(email) {
-  const res = await fetch('/api/password-reset', {
+  const res = await fetch('/api/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'send-reset-email', email }),
@@ -10,7 +10,7 @@ export async function sendPasswordResetEmail(email) {
 }
 
 export async function verifyPasswordResetToken(token) {
-  const res = await fetch('/api/password-reset', {
+  const res = await fetch('/api/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'verify-token', token }),
@@ -21,7 +21,7 @@ export async function verifyPasswordResetToken(token) {
 }
 
 export async function resetPassword(token, newPassword) {
-  const res = await fetch('/api/password-reset', {
+  const res = await fetch('/api/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'reset-password', token, newPassword }),

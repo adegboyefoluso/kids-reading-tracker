@@ -1,3 +1,5 @@
+import { sendEmail, emailShell } from './_email.js'
+
 const PROJECT = (process.env.VITE_FIREBASE_PROJECT_ID || '').replace(/^﻿/, '').trim()
 const KEY = (process.env.VITE_FIREBASE_API_KEY || '').replace(/^﻿/, '').trim()
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`
@@ -160,20 +162,6 @@ export default async function handler(req, res) {
       })
     }
 
-    // ── Forgot password ────────────────────────────────────────────────────
-    if (action === 'reset-password') {
-      if (!email) return res.status(400).json({ error: 'Email is required' })
-
-      const authRes = await fetch(`${AUTH}/accounts:sendOobCode?key=${KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestType: 'PASSWORD_RESET', email }),
-      })
-      const authData = await authRes.json()
-      if (!authRes.ok) return res.status(400).json({ error: friendlyError(authData.error?.message) })
-      return res.status(200).json({ ok: true })
-    }
-
     // ── Change password ────────────────────────────────────────────────────
     if (action === 'change-password') {
       if (!idToken || !newPassword) return res.status(400).json({ error: 'Token and new password are required' })
@@ -241,6 +229,134 @@ export default async function handler(req, res) {
         emoji: jm || '📚', isAdmin: true, familyId: invFamilyId,
         idToken: token, refreshToken,
       })
+    }
+
+    // ── Send password reset email ────────────────────────────────────
+    if (action === 'send-reset-email') {
+      if (!email) return res.status(400).json({ error: 'Email is required' })
+
+      // Generate reset token
+      const resetToken = crypto.getRandomValues(new Uint8Array(16)).reduce((s, b) => s + b.toString(16).padStart(2, '0'), '')
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+      // Store token in Firestore
+      await fetch(`${FS}/passwordResets/${resetToken}?key=${KEY}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fields: {
+            email: { stringValue: email },
+            expiresAt: { stringValue: expiresAt },
+            used: { booleanValue: false }
+          }
+        })
+      })
+
+      // Send reset email via Resend
+      const resetLink = `https://readershall.com/set-password?token=${resetToken}`
+      const html = emailShell(
+        'Reset Your Password',
+        `
+          <p>Hi,</p>
+          <p>We received a request to reset your password. Click the button below to set a new password.</p>
+          <div style="text-align:center; margin:24px 0;">
+            <a href="${resetLink}" style="background:#111; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;">Reset Password</a>
+          </div>
+          <p>Or copy this link: <a href="${resetLink}">${resetLink}</a></p>
+          <p>This link expires in 24 hours.</p>
+          <p>If you didn't request this, you can safely ignore this email.</p>
+        `
+      )
+
+      await sendEmail({ to: email, subject: 'Reset Your Password - Reading Tracker', html })
+      return res.status(200).json({ ok: true, message: 'Password reset email sent' })
+    }
+
+    // ── Verify reset token ────────────────────────────────────────────
+    if (action === 'verify-token') {
+      if (!token) return res.status(400).json({ error: 'Token is required' })
+
+      const tokenRes = await fetch(`${FS}/passwordResets/${token}?key=${KEY}`)
+      if (!tokenRes.ok) return res.status(404).json({ error: 'Invalid or expired token' })
+
+      const tokenDoc = tokenRes.json ? await tokenRes.json() : {}
+      const fields = tokenDoc.fields || {}
+      const email = fields.email?.stringValue || ''
+      const expiresAt = fields.expiresAt?.stringValue || ''
+      const used = fields.used?.booleanValue || false
+
+      const now = new Date()
+      const expTime = new Date(expiresAt)
+
+      if (now > expTime) return res.status(400).json({ error: 'Token expired' })
+      if (used) return res.status(400).json({ error: 'Token already used' })
+
+      return res.status(200).json({ ok: true, email })
+    }
+
+    // ── Reset password (update Firebase Auth) ──────────────────────────
+    if (action === 'reset-password') {
+      if (!token || !newPassword) return res.status(400).json({ error: 'Token and password required' })
+      if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' })
+
+      const tokenRes = await fetch(`${FS}/passwordResets/${token}?key=${KEY}`)
+      if (!tokenRes.ok) return res.status(404).json({ error: 'Invalid token' })
+
+      const tokenDoc = await tokenRes.json()
+      const fields = tokenDoc.fields || {}
+      const email = fields.email?.stringValue || ''
+      const expiresAt = fields.expiresAt?.stringValue || ''
+      const used = fields.used?.booleanValue || false
+
+      const now = new Date()
+      const expTime = new Date(expiresAt)
+
+      if (now > expTime) return res.status(400).json({ error: 'Token expired' })
+      if (used) return res.status(400).json({ error: 'Token already used' })
+
+      // Find user by email and reset password
+      const readersRes = await fetch(`${FS}:runQuery?key=${KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          structuredQuery: {
+            from: [{ collectionId: 'readers' }],
+            where: { fieldFilter: { field: { fieldPath: 'email' }, op: 'EQUAL', value: { stringValue: email } } },
+            limit: 1
+          }
+        })
+      })
+
+      const readersData = await readersRes.json()
+      const readerDoc = readersData[0]?.document
+      if (!readerDoc) return res.status(404).json({ error: 'User not found' })
+
+      const readerId = readerDoc.name.split('/').pop()
+
+      // Update Firebase Auth password
+      const authRes = await fetch(`${AUTH}/accounts:update?key=${KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          localId: readerId,
+          password: newPassword,
+          returnSecureToken: false
+        })
+      })
+
+      if (!authRes.ok) {
+        const authErr = await authRes.json()
+        return res.status(400).json({ error: friendlyError(authErr.error?.message) })
+      }
+
+      // Mark token as used
+      await fetch(`${FS}/passwordResets/${token}?key=${KEY}&updateMask.fieldPaths=used`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { used: { booleanValue: true } } })
+      })
+
+      return res.status(200).json({ ok: true, message: 'Password reset successfully' })
     }
 
     return res.status(400).json({ error: 'Invalid action' })

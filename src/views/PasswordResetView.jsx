@@ -24,7 +24,7 @@ export default function PasswordResetView() {
       }
 
       try {
-        const res = await fetch('/api/password-reset', {
+        const res = await fetch('/api/auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'verify-token', token })
@@ -66,7 +66,7 @@ export default function PasswordResetView() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/api/password-reset', {
+      const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reset-password', token, newPassword: password })
