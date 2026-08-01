@@ -1,9 +1,33 @@
 import webpush from 'web-push'
+import admin from 'firebase-admin'
+import { sendEmail, emailShell } from './_email.js'
 
 const PROJECT = (process.env.VITE_FIREBASE_PROJECT_ID || '').replace(/^﻿/, '').trim()
 const KEY = (process.env.VITE_FIREBASE_API_KEY || '').replace(/^﻿/, '').trim()
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`
 const AUTH = 'https://identitytoolkit.googleapis.com/v1'
+
+// Initialize Firebase Admin SDK for password reset links
+let adminApp = null
+function getAdminAuth() {
+  if (!adminApp) {
+    try {
+      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+        : null
+
+      if (serviceAccount) {
+        adminApp = admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          projectId: PROJECT,
+        })
+      }
+    } catch (e) {
+      console.error('Failed to init Firebase Admin:', e.message)
+    }
+  }
+  return adminApp ? admin.auth(adminApp) : null
+}
 
 const VAPID_PUBLIC  = (process.env.VAPID_PUBLIC_KEY  || '').replace(/^﻿/, '').trim()
 const VAPID_PRIVATE = (process.env.VAPID_PRIVATE_KEY || '').replace(/^﻿/, '').trim()
@@ -714,14 +738,28 @@ export default async function handler(req, res) {
         }),
       })
 
-      // Send password reset email to user
+      // Send password reset email via Resend
       try {
-        await fetch(`${AUTH}/accounts:sendOobCode?key=${KEY}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ requestType: 'PASSWORD_RESET', email }),
-        })
-        console.log(`[create-reader] Password reset email sent to ${email}`)
+        const authService = getAdminAuth()
+        if (authService) {
+          const resetLink = await authService.generatePasswordResetLink(email)
+          const html = emailShell(
+            'Set Your Password',
+            `
+              <p>Hi ${name},</p>
+              <p>Your account has been created! Click the button below to set your password and get started.</p>
+              <div style="text-align:center; margin:24px 0;">
+                <a href="${resetLink}" style="background:#111; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;">Set Password</a>
+              </div>
+              <p>Or copy this link: <a href="${resetLink}">${resetLink}</a></p>
+              <p>This link expires in 24 hours.</p>
+            `
+          )
+          await sendEmail({ to: email, subject: 'Set Your Password - Reading Tracker', html })
+          console.log(`[create-reader] Password reset email sent via Resend to ${email}`)
+        } else {
+          console.warn('[create-reader] Firebase Admin not initialized — password reset email not sent')
+        }
       } catch (e) {
         console.error(`[create-reader] Failed to send password reset email to ${email}:`, e.message)
         // Don't block user creation if email fails
