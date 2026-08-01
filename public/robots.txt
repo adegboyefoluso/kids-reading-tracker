@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /set-password
 
-Sitemap: https://kids-reading-tracker.vercel.app/sitemap.xml
+Sitemap: https://readershall.com/api/sitemap

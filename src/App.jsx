@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Footer from './components/Footer'
 import KioskView from './views/KioskView'
 import ScannerView from './views/ScannerView'
 import AdminView from './views/AdminView'
@@ -33,21 +34,26 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<ScannerView />} />
-        <Route path="/scan" element={<Navigate to="/" replace />} />
-        <Route path="/kiosk" element={<KioskView />} />
-        <Route path="/admin" element={<AdminView />} />
-        <Route path="/analytics" element={<AnalyticsView />} />
-        <Route path="/setup" element={<SetupView />} />
-        <Route path="/buddy" element={<BuddyView />} />
-        <Route path="/test" element={<TestView />} />
-        <Route path="/worksheet" element={<WorksheetView />} />
-        <Route path="/chores" element={<ChoresView />} />
-        <Route path="/leaderboard" element={<LeaderboardView />} />
-        <Route path="/set-password" element={<PasswordResetView />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <div style={{ flex: 1 }}>
+          <Routes>
+            <Route path="/" element={<ScannerView />} />
+            <Route path="/scan" element={<Navigate to="/" replace />} />
+            <Route path="/kiosk" element={<KioskView />} />
+            <Route path="/admin" element={<AdminView />} />
+            <Route path="/analytics" element={<AnalyticsView />} />
+            <Route path="/setup" element={<SetupView />} />
+            <Route path="/buddy" element={<BuddyView />} />
+            <Route path="/test" element={<TestView />} />
+            <Route path="/worksheet" element={<WorksheetView />} />
+            <Route path="/chores" element={<ChoresView />} />
+            <Route path="/leaderboard" element={<LeaderboardView />} />
+            <Route path="/set-password" element={<PasswordResetView />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
     </BrowserRouter>
   )
 }
