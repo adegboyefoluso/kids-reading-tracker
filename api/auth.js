@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto'
 import { sendEmail, emailShell } from './_email.js'
 
 const PROJECT = (process.env.VITE_FIREBASE_PROJECT_ID || '').replace(/^﻿/, '').trim()
@@ -236,7 +237,7 @@ export default async function handler(req, res) {
       if (!email) return res.status(400).json({ error: 'Email is required' })
 
       // Generate reset token
-      const resetToken = crypto.getRandomValues(new Uint8Array(16)).reduce((s, b) => s + b.toString(16).padStart(2, '0'), '')
+      const resetToken = randomBytes(16).toString('hex')
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
       // Store token in Firestore

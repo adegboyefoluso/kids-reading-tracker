@@ -1,5 +1,6 @@
 import webpush from 'web-push'
 import admin from 'firebase-admin'
+import { randomBytes } from 'crypto'
 import { sendEmail, emailShell } from './_email.js'
 
 const PROJECT = (process.env.VITE_FIREBASE_PROJECT_ID || '').replace(/^﻿/, '').trim()
@@ -741,7 +742,7 @@ export default async function handler(req, res) {
       // Send welcome email via Resend with password reset token
       try {
         // Generate reset token (same as send-reset-email in auth.js)
-        const resetToken = crypto.getRandomValues(new Uint8Array(16)).reduce((s, b) => s + b.toString(16).padStart(2, '0'), '')
+        const resetToken = randomBytes(16).toString('hex')
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
         // Store token in Firestore
