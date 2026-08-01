@@ -738,33 +738,25 @@ export default async function handler(req, res) {
         }),
       })
 
-      // Send password reset email via Resend
+      // Send welcome email via Resend (user can reset password via login page)
       try {
-        const authService = getAdminAuth()
-        console.log('[create-reader] authService initialized:', !!authService)
-        if (authService) {
-          console.log('[create-reader] Generating password reset link for:', email)
-          const resetLink = await authService.generatePasswordResetLink(email)
-          console.log('[create-reader] Reset link generated:', resetLink.substring(0, 50) + '...')
-          const html = emailShell(
-            'Set Your Password',
-            `
-              <p>Hi ${name},</p>
-              <p>Your account has been created! Click the button below to set your password and get started.</p>
-              <div style="text-align:center; margin:24px 0;">
-                <a href="${resetLink}" style="background:#111; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;">Set Password</a>
-              </div>
-              <p>Or copy this link: <a href="${resetLink}">${resetLink}</a></p>
-              <p>This link expires in 24 hours.</p>
-            `
-          )
-          await sendEmail({ to: email, subject: 'Set Your Password - Reading Tracker', html })
-          console.log(`[create-reader] Password reset email sent via Resend to ${email}`)
-        } else {
-          console.warn('[create-reader] Firebase Admin not initialized — password reset email not sent')
-        }
+        const html = emailShell(
+          'Welcome to Reading Tracker!',
+          `
+            <p>Hi ${name},</p>
+            <p>Your account has been created! You can now log in and start using Reading Tracker.</p>
+            <div style="text-align:center; margin:24px 0;">
+              <a href="https://readershall.com" style="background:#111; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;">Go to Reading Tracker</a>
+            </div>
+            <p><strong>First time logging in?</strong></p>
+            <p>Use the email address <strong>${email}</strong> and the password that was set for you. If you need to reset your password, click "Forgot Password" on the login page.</p>
+            <p>We're excited to have you!</p>
+          `
+        )
+        await sendEmail({ to: email, subject: 'Welcome to Reading Tracker - Account Created', html })
+        console.log(`[create-reader] Welcome email sent via Resend to ${email}`)
       } catch (e) {
-        console.error(`[create-reader] Failed to send password reset email to ${email}:`, e.message)
+        console.error(`[create-reader] Failed to send welcome email to ${email}:`, e.message)
         // Don't block user creation if email fails
       }
 
