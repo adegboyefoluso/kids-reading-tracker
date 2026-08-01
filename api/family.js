@@ -741,8 +741,11 @@ export default async function handler(req, res) {
       // Send password reset email via Resend
       try {
         const authService = getAdminAuth()
+        console.log('[create-reader] authService initialized:', !!authService)
         if (authService) {
+          console.log('[create-reader] Generating password reset link for:', email)
           const resetLink = await authService.generatePasswordResetLink(email)
+          console.log('[create-reader] Reset link generated:', resetLink.substring(0, 50) + '...')
           const html = emailShell(
             'Set Your Password',
             `
