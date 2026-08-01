@@ -745,6 +745,8 @@ export default async function handler(req, res) {
         const resetToken = randomBytes(16).toString('hex')
         const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
+        console.log(`[create-reader] Generated welcome token for ${email}: ${resetToken}`)
+
         // Store token in Firestore
         await fetch(`${FS}/passwordResets/${resetToken}?key=${KEY}`, {
           method: 'PATCH',
@@ -760,6 +762,7 @@ export default async function handler(req, res) {
 
         // Send welcome email via Resend with set-password link
         const resetLink = `https://readershall.com/set-password?token=${resetToken}`
+        console.log(`[create-reader] Welcome reset link: ${resetLink}`)
         const html = emailShell(
           'Welcome to Reading Tracker!',
           `

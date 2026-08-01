@@ -240,6 +240,8 @@ export default async function handler(req, res) {
       const resetToken = randomBytes(16).toString('hex')
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
 
+      console.log(`[send-reset-email] Generated token for ${email}: ${resetToken}`)
+
       // Store token in Firestore
       await fetch(`${FS}/passwordResets/${resetToken}?key=${KEY}`, {
         method: 'PATCH',
@@ -255,6 +257,8 @@ export default async function handler(req, res) {
 
       // Send reset email via Resend
       const resetLink = `https://readershall.com/set-password?token=${resetToken}`
+      console.log(`[send-reset-email] Reset link: ${resetLink}`)
+
       const html = emailShell(
         'Reset Your Password',
         `
@@ -270,6 +274,7 @@ export default async function handler(req, res) {
       )
 
       await sendEmail({ to: email, subject: 'Reset Your Password - Reading Tracker', html })
+      console.log(`[send-reset-email] Email sent to ${email}`)
       return res.status(200).json({ ok: true, message: 'Password reset email sent' })
     }
 
