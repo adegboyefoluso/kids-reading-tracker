@@ -324,7 +324,62 @@ export default async function handler(req, res) {
 
   // ── GET: buddy invite / chat lookups ────────────────────────────────────
   if (req.method === 'GET') {
-    const { buddyInvite, buddyChat, buddyChats, buddyChatsAdmin } = req.query
+    const { buddyInvite, buddyChat, buddyChats, buddyChatsAdmin, sitemap } = req.query
+
+    // Return XML sitemap for search engines
+    if (sitemap === '1') {
+      res.setHeader('Content-Type', 'application/xml')
+      res.setHeader('Cache-Control', 'max-age=3600')
+      const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://readershall.com/</loc>
+    <priority>1.0</priority>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://readershall.com/kiosk</loc>
+    <priority>0.8</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://readershall.com/admin</loc>
+    <priority>0.9</priority>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://readershall.com/analytics</loc>
+    <priority>0.8</priority>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://readershall.com/buddy</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://readershall.com/chores</loc>
+    <priority>0.8</priority>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://readershall.com/leaderboard</loc>
+    <priority>0.8</priority>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://readershall.com/worksheet</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://readershall.com/setup</loc>
+    <priority>0.6</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+</urlset>`
+      return res.status(200).send(sitemapXml)
+    }
 
     // Return invite metadata (public — no auth needed)
     if (buddyInvite) {

@@ -4,4 +4,4 @@ Disallow: /admin
 Disallow: /api/
 Disallow: /set-password
 
-Sitemap: https://readershall.com/api/sitemap
+Sitemap: https://readershall.com/api/family?sitemap=1
