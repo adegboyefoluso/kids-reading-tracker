@@ -10,6 +10,7 @@ import TestView from './views/TestView'
 import WorksheetView from './views/WorksheetView'
 import ChoresView from './views/ChoresView'
 import LeaderboardView from './views/LeaderboardView'
+import PasswordResetView from './views/PasswordResetView'
 
 export default function App() {
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/worksheet" element={<WorksheetView />} />
         <Route path="/chores" element={<ChoresView />} />
         <Route path="/leaderboard" element={<LeaderboardView />} />
+        <Route path="/set-password" element={<PasswordResetView />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
