@@ -17,26 +17,38 @@ export default function PasswordResetView() {
 
   useEffect(() => {
     async function verifyToken() {
+      console.log('PasswordResetView mounted, token:', token, 'email:', email)
+
       if (!token) {
+        console.log('No token provided')
         setError('No reset token provided')
         setLoading(false)
         return
       }
 
       try {
+        console.log('Verifying token:', token)
+        const requestBody = { action: 'verify-token', token: token }
+        console.log('Request body:', requestBody)
+
         const res = await fetch('/api/auth', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'verify-token', token })
+          body: JSON.stringify(requestBody)
         })
+        console.log('Response status:', res.status)
+
         const data = await res.json()
+        console.log('Response data:', data)
+
         if (!res.ok) {
           setError(data.error || 'Invalid or expired token')
         } else {
           setUserEmail(data.email)
         }
       } catch (e) {
-        setError(e.message)
+        console.error('Error verifying token:', e)
+        setError(e.message || 'An error occurred')
       } finally {
         setLoading(false)
       }
