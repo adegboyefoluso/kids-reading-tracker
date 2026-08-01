@@ -282,21 +282,39 @@ export default async function handler(req, res) {
     if (action === 'verify-token') {
       if (!token) return res.status(400).json({ error: 'Token is required' })
 
-      const tokenRes = await fetch(`${FS}/passwordResets/${token}?key=${KEY}`)
-      if (!tokenRes.ok) return res.status(404).json({ error: 'Invalid or expired token' })
+      console.log(`[verify-token] Verifying token: ${token}`)
 
-      const tokenDoc = tokenRes.json ? await tokenRes.json() : {}
+      const tokenRes = await fetch(`${FS}/passwordResets/${token}?key=${KEY}`)
+      console.log(`[verify-token] Firestore response status: ${tokenRes.status}`)
+
+      if (!tokenRes.ok) {
+        console.log(`[verify-token] Token not found in Firestore for: ${token}`)
+        return res.status(404).json({ error: 'Invalid or expired token' })
+      }
+
+      const tokenDoc = await tokenRes.json()
+      console.log(`[verify-token] Token doc: ${JSON.stringify(tokenDoc)}`)
+
       const fields = tokenDoc.fields || {}
       const email = fields.email?.stringValue || ''
       const expiresAt = fields.expiresAt?.stringValue || ''
       const used = fields.used?.booleanValue || false
 
+      console.log(`[verify-token] Email: ${email}, Used: ${used}, Expires: ${expiresAt}`)
+
       const now = new Date()
       const expTime = new Date(expiresAt)
 
-      if (now > expTime) return res.status(400).json({ error: 'Token expired' })
-      if (used) return res.status(400).json({ error: 'Token already used' })
+      if (now > expTime) {
+        console.log(`[verify-token] Token expired`)
+        return res.status(400).json({ error: 'Token expired' })
+      }
+      if (used) {
+        console.log(`[verify-token] Token already used`)
+        return res.status(400).json({ error: 'Token already used' })
+      }
 
+      console.log(`[verify-token] Token verified successfully for ${email}`)
       return res.status(200).json({ ok: true, email })
     }
 
