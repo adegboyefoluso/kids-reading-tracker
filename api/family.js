@@ -738,22 +738,23 @@ export default async function handler(req, res) {
         }),
       })
 
-      // Send welcome email via Resend (user can reset password via login page)
+      // Send welcome email via Resend with password change link
       try {
+        const resetLink = `https://readershall.com/set-password?email=${encodeURIComponent(email)}`
         const html = emailShell(
           'Welcome to Reading Tracker!',
           `
             <p>Hi ${name},</p>
-            <p>Your account has been created! You can now log in and start using Reading Tracker.</p>
+            <p>Your account has been created! Before you can start using Reading Tracker, please set your password.</p>
             <div style="text-align:center; margin:24px 0;">
-              <a href="https://readershall.com" style="background:#111; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;">Go to Reading Tracker</a>
+              <a href="${resetLink}" style="background:#111; color:#fff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:600; display:inline-block;">Set Your Password</a>
             </div>
-            <p><strong>First time logging in?</strong></p>
-            <p>Use the email address <strong>${email}</strong> and the password that was set for you. If you need to reset your password, click "Forgot Password" on the login page.</p>
-            <p>We're excited to have you!</p>
+            <p>Or copy this link: <a href="${resetLink}">${resetLink}</a></p>
+            <p>Once you've set your password, you'll be able to log in and start using Reading Tracker!</p>
+            <p>We're excited to have you! 📚</p>
           `
         )
-        await sendEmail({ to: email, subject: 'Welcome to Reading Tracker - Account Created', html })
+        await sendEmail({ to: email, subject: 'Welcome to Reading Tracker - Set Your Password', html })
         console.log(`[create-reader] Welcome email sent via Resend to ${email}`)
       } catch (e) {
         console.error(`[create-reader] Failed to send welcome email to ${email}:`, e.message)
