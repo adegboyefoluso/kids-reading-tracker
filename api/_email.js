@@ -8,7 +8,7 @@ export async function sendEmail({ to, subject, html }) {
     console.log('[email] RESEND_API_KEY not set — skipping:', subject)
     return { ok: false, error: 'RESEND_API_KEY not set' }
   }
-  const from = process.env.FROM_EMAIL || 'Reading Tracker <onboarding@resend.dev>'
+  const from = process.env.FROM_EMAIL || 'Reading Tracker <noreply@readershall.com>'
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -67,7 +67,7 @@ export function emailShell(title, bodyHtml) {
     <div class="body">${bodyHtml}</div>
     <div class="footer">
       Reading Tracker &nbsp;·&nbsp; You're receiving this because you're a family admin.<br/>
-      Manage your notification settings inside the app at <a href="https://kids-reading-tracker.vercel.app/admin">Admin Panel</a>.
+      Manage your notification settings inside the app at <a href="https://readershall.com/admin">Admin Panel</a>.
     </div>
   </div>
 </body>
