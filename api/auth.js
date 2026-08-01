@@ -68,7 +68,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const { action, email, password, name, emoji, idToken, newPassword } = req.body || {}
+  const { action, email, password, name, emoji, idToken, newPassword, token } = req.body || {}
 
   try {
     // ── Sign up — always creates a new family, always admin ────────────────
