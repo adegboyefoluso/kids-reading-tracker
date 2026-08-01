@@ -1,4 +1,11 @@
 {
+  "redirects": [
+    {
+      "source": "/:path(.*)",
+      "destination": "https://readershall.com/:path",
+      "statusCode": 301
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
