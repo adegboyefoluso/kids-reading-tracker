@@ -1,10 +1,33 @@
 import { randomBytes } from 'crypto'
+import admin from 'firebase-admin'
 import { sendEmail, emailShell } from './_email.js'
 
 const PROJECT = (process.env.VITE_FIREBASE_PROJECT_ID || '').replace(/^﻿/, '').trim()
 const KEY = (process.env.VITE_FIREBASE_API_KEY || '').replace(/^﻿/, '').trim()
 const FS = `https://firestore.googleapis.com/v1/projects/${PROJECT}/databases/(default)/documents`
 const AUTH = 'https://identitytoolkit.googleapis.com/v1'
+
+// Initialize Firebase Admin SDK for password updates
+let adminApp = null
+function getAdminAuth() {
+  if (!adminApp) {
+    try {
+      const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+        : null
+
+      if (serviceAccount) {
+        adminApp = admin.initializeApp({
+          credential: admin.credential.cert(serviceAccount),
+          projectId: PROJECT,
+        })
+      }
+    } catch (e) {
+      console.error('[auth] Failed to init Firebase Admin:', e.message)
+    }
+  }
+  return adminApp ? admin.auth(adminApp) : null
+}
 
 function toFS(obj) {
   const fields = {}
@@ -357,20 +380,26 @@ export default async function handler(req, res) {
 
       const readerId = readerDoc.name.split('/').pop()
 
-      // Update Firebase Auth password
-      const authRes = await fetch(`${AUTH}/accounts:update?key=${KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          localId: readerId,
-          password: newPassword,
-          returnSecureToken: false
-        })
-      })
-
-      if (!authRes.ok) {
-        const authErr = await authRes.json()
-        return res.status(400).json({ error: friendlyError(authErr.error?.message) })
+      // Update Firebase Auth password using Admin SDK
+      try {
+        const adminAuth = getAdminAuth()
+        if (!adminAuth) {
+          console.log('[reset-password] Admin SDK not initialized, falling back to REST API')
+          // Fallback to REST API if Admin SDK not available
+          const authRes = await fetch(`${AUTH}/accounts:update?key=${KEY}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken: 'dummy', password: newPassword })
+          })
+          if (!authRes.ok) throw new Error('Failed to update password')
+        } else {
+          console.log(`[reset-password] Updating password for user ${readerId} via Admin SDK`)
+          await adminAuth.updateUser(readerId, { password: newPassword })
+          console.log(`[reset-password] Password updated successfully`)
+        }
+      } catch (e) {
+        console.error('[reset-password] Error updating password:', e.message)
+        return res.status(400).json({ error: 'Failed to update password: ' + e.message })
       }
 
       // Mark token as used
