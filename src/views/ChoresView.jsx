@@ -18,9 +18,14 @@ function EarningsCalendar({ readerId, myPayments, tc }) {
       getEarningsHistory(readerId, year, month)
         .then(d => setData(d))
         .catch(() => setData(null)),
-      getKhanProgress(readerId, month, year)
-        .then(d => setKhanaData(d))
-        .catch(() => setKhanaData(null))
+      getKhanProgress(readerId)
+        .then(d => {
+          // Filter to current month's entry
+          const monthStr = `${year}-${String(month).padStart(2, '0')}`
+          const filtered = d.entries ? d.entries.filter(e => e.month === monthStr) : []
+          setKhanaData({ entries: filtered })
+        })
+        .catch(() => setKhanaData({ entries: [] }))
     ]).finally(() => setLoading(false))
   }, [readerId, year, month])
 

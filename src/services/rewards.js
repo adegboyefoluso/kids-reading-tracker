@@ -188,10 +188,8 @@ export async function logKhanHours(payload) {
   return r.json()
 }
 
-export async function getKhanProgress(readerId, month, year) {
+export async function getKhanProgress(readerId) {
   const params = new URLSearchParams({ khanaProgress: readerId })
-  if (month) params.set('month', month)
-  if (year) params.set('year', year)
   const r = await fetch(`${API}?${params}`)
   if (!r.ok) throw new Error('Failed to fetch Khan progress')
   return r.json()
