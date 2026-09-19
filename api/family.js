@@ -1409,10 +1409,13 @@ export default async function handler(req, res) {
 
       let entries = []
       if (r.ok) {
-        entries = (await r.json()).filter(d => d.document).map(d => fromFS(d.document))
+        const allDocs = (await r.json()).filter(d => d.document).map(d => fromFS(d.document))
+        // Always return ALL entries for the reader, optionally filtered by month/year
         if (month && year) {
           const monthStr = `${year}-${String(month).padStart(2, '0')}`
-          entries = entries.filter(e => e.month === monthStr)
+          entries = allDocs.filter(e => e.month === monthStr)
+        } else {
+          entries = allDocs
         }
       }
 
