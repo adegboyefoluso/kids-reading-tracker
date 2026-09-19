@@ -727,16 +727,15 @@ export default async function handler(req, res) {
       ])
 
       const totalBooks  = booksR.ok  ? (await booksR.json()).filter(d => d.document).length * perBook : 0
-      const choreTotal  = ledgerR.ok
-        ? (await ledgerR.json()).filter(d => d.document).map(d => fromFS(d.document))
-            .filter(e => e.type === 'chore')
-            .reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
-        : 0
+      const ledgerEntries = ledgerR.ok ? (await ledgerR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
+      const choreTotal  = ledgerEntries.filter(e => e.type === 'chore').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+      const khanTotal   = ledgerEntries.filter(e => e.type === 'khan').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
 
       return res.json({
-        total:  Math.round((totalBooks + choreTotal) * 100) / 100,
+        total:  Math.round((totalBooks + choreTotal + khanTotal) * 100) / 100,
         books:  Math.round(totalBooks  * 100) / 100,
         chores: Math.round(choreTotal  * 100) / 100,
+        khan:   Math.round(khanTotal   * 100) / 100,
         perBook,
       })
     }
