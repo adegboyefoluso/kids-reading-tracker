@@ -67,8 +67,8 @@ function EarningsCalendar({ readerId, myPayments, tc }) {
             </div>
             <div style={{ background: '#0a100a', border: '1px solid #1e5a3a', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
               <div style={{ color: '#7dd3fc', fontSize: '0.65rem', marginBottom: 4 }}>🎓 KHAN</div>
-              <div style={{ color: '#06b6d4', fontWeight: 700, fontSize: '1rem' }}>{khanaData?.entries?.[0]?.totalMinutes || 0}m</div>
-              <div style={{ color: '#2a5a5a', fontSize: '0.65rem', marginTop: 2 }}>{khanaData?.entries?.[0]?.percentageAchieved || 0}%</div>
+              <div style={{ color: '#06b6d4', fontWeight: 700, fontSize: '1rem' }}>${(khanaData?.entries?.[0]?.rewardEarned || 0).toFixed(2)}</div>
+              <div style={{ color: '#2a5a5a', fontSize: '0.65rem', marginTop: 2 }}>{khanaData?.entries?.[0]?.totalMinutes || 0}m / {khanaData?.entries?.[0]?.targetMinutes || 0}m</div>
             </div>
             <div style={{ background: '#1a1a0a', border: '1px solid #854d0e', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
               <div style={{ color: '#fbbf24', fontSize: '0.65rem', marginBottom: 4 }}>EARNED</div>
