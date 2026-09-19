@@ -166,6 +166,43 @@ export async function updateReaderProfile(readerId, data) {
   return r.json()
 }
 
+export async function setKhanGoal(payload) {
+  // payload: { readerId, familyId, monthlyKhanMinutes }
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'set-khan-goal', ...payload }),
+  })
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Failed to save Khan goal') }
+  return r.json()
+}
+
+export async function logKhanHours(payload) {
+  // payload: { familyId, readerId, month, year, totalMinutes, rewardAmount }
+  const r = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'log-khan-hours', ...payload }),
+  })
+  if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || 'Failed to log Khan hours') }
+  return r.json()
+}
+
+export async function getKhanProgress(readerId, month, year) {
+  const params = new URLSearchParams({ khanaProgress: readerId })
+  if (month) params.set('month', month)
+  if (year) params.set('year', year)
+  const r = await fetch(`${API}?${params}`)
+  if (!r.ok) throw new Error('Failed to fetch Khan progress')
+  return r.json()
+}
+
+export async function getKhanEarnings(readerId) {
+  const r = await fetch(`${API}?khanaEarnings=${encodeURIComponent(readerId)}`)
+  if (!r.ok) return { total: 0 }
+  return r.json()
+}
+
 export async function setAlexaPin(familyId, pin) {
   const r = await fetch(API, {
     method: 'POST',

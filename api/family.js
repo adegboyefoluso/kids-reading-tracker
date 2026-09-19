@@ -1149,8 +1149,8 @@ export default async function handler(req, res) {
       const { readerId } = req.body
       if (!readerId || !familyId) return res.status(400).json({ error: 'readerId and familyId required' })
 
-      // Fetch finished books for this reader + chore ledger entries in parallel
-      const [booksR, ledgerR, goalR] = await Promise.all([
+      // Fetch finished books for this reader + chore ledger entries + Khan hours in parallel
+      const [booksR, ledgerR, goalR, khanaR] = await Promise.all([
         fetch(`${FS}:runQuery?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'books' }], where: { compositeFilter: { op: 'AND', filters: [
             { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
@@ -1162,11 +1162,15 @@ export default async function handler(req, res) {
             { fieldFilter: { field: { fieldPath: 'type' }, op: 'EQUAL', value: { stringValue: 'chore' } } },
           ] } }, limit: 500 } }) }),
         fetch(`${FS}/readerGoals/${readerId}?key=${KEY}`),
+        fetch(`${FS}:runQuery?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ structuredQuery: { from: [{ collectionId: 'khanaAcademy' }], where: { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } }, limit: 500 } }) }),
       ])
 
       const finishedBooks = booksR.ok ? (await booksR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
       const choreEntries  = ledgerR.ok ? (await ledgerR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
+      const khanaEntries  = khanaR.ok ? (await khanaR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
       const choreTotal    = choreEntries.reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0)
+      const khanaTotal    = khanaEntries.reduce((sum, e) => sum + (parseFloat(e.rewardEarned) || 0), 0)
 
       let bookTotal = 0
       if (goalR.ok) {
@@ -1179,12 +1183,12 @@ export default async function handler(req, res) {
         }
       }
 
-      const newBalance = Math.round((bookTotal + choreTotal) * 100) / 100
+      const newBalance = Math.round((bookTotal + choreTotal + khanaTotal) * 100) / 100
       await fetch(`${FS}/readers/${readerId}?key=${KEY}&updateMask.fieldPaths=balance`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fields: { balance: { doubleValue: newBalance } } }),
       })
-      return res.json({ ok: true, newBalance, finishedBooks: finishedBooks.length, bookTotal, choreTotal })
+      return res.json({ ok: true, newBalance, finishedBooks: finishedBooks.length, bookTotal, choreTotal, khanaTotal: Math.round(khanaTotal * 100) / 100 })
     }
 
     // ── Record a cash payment made to a kid ────────────────────────────────────
@@ -1305,6 +1309,145 @@ export default async function handler(req, res) {
       }))
 
       return res.json({ ok: true, credited, skipped, total: uncredited.length })
+    }
+
+    // ── Set monthly Khan Academy hours goal for a reader ──────────────────────
+    if (action === 'set-khan-goal') {
+      const { readerId, monthlyKhanMinutes } = req.body
+      if (!readerId || monthlyKhanMinutes == null) return res.status(400).json({ error: 'readerId and monthlyKhanMinutes required' })
+      const minutes = Math.max(0, parseInt(monthlyKhanMinutes) || 0)
+      await fetch(`${FS}/readerGoals/${readerId}?key=${KEY}&updateMask.fieldPaths=monthlyKhanMinutes`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: { monthlyKhanMinutes: { integerValue: String(minutes) } } }),
+      })
+      return res.json({ ok: true })
+    }
+
+    // ── Log Khan Academy hours for a reader in a specific month ────────────────
+    if (action === 'log-khan-hours') {
+      const { readerId, month, year, totalMinutes, rewardAmount } = req.body
+      if (!familyId || !readerId || !month || !year) return res.status(400).json({ error: 'familyId, readerId, month, year required' })
+
+      const yr = parseInt(year)
+      const mo = parseInt(month)
+      const mins = Math.max(0, parseInt(totalMinutes) || 0)
+      const reward = Math.max(0, parseFloat(rewardAmount) || 0)
+      const monthStr = `${yr}-${String(mo).padStart(2, '0')}`
+
+      // Fetch reader's Khan goal
+      const goalR = await fetch(`${FS}/readerGoals/${readerId}?key=${KEY}`)
+      let targetMinutes = 0
+      if (goalR.ok) {
+        const goal = fromFS(await goalR.json())
+        targetMinutes = parseInt(goal.monthlyKhanMinutes) || 0
+      }
+
+      // Calculate reward: reward% = min(100, (totalMinutes / targetMinutes / 0.70) * 100)
+      let rewardEarned = 0
+      let pct = 0
+      if (targetMinutes > 0) {
+        pct = (mins / targetMinutes) * 100
+        const rewardPct = Math.min(100, (pct / 70) * 100)
+        rewardEarned = Math.round((reward * rewardPct / 100) * 100) / 100
+      }
+
+      const entryId = crypto.randomUUID()
+      const achieved = mins >= 1 // any amount logged is "achieved" (can be 0% reward)
+
+      // Create Khan Academy entry
+      await fetch(`${FS}/khanaAcademy/${entryId}?key=${KEY}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: toFS({
+          readerId, familyId, month: monthStr, year: yr,
+          totalMinutes: mins, targetMinutes, rewardAmount: reward, rewardEarned,
+          percentageAchieved: Math.round(pct), rewarded: achieved,
+          createdAt: new Date().toISOString()
+        }) }),
+      })
+
+      // If any reward earned, create ledger entry and update balance
+      if (rewardEarned > 0) {
+        const ledgerId = crypto.randomUUID()
+        await fetch(`${FS}/ledger/${ledgerId}?key=${KEY}`, {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fields: toFS({
+            readerId, familyId, type: 'khan', description: `Khan Academy (${monthStr})`,
+            amount: rewardEarned, refId: entryId, createdAt: new Date().toISOString()
+          }) }),
+        })
+
+        // Update reader balance
+        const readerR = await fetch(`${FS}/readers/${readerId}?key=${KEY}`)
+        if (readerR.ok) {
+          const reader = fromFS(await readerR.json())
+          const newBalance = Math.round(((parseFloat(reader.balance) || 0) + rewardEarned) * 100) / 100
+          await fetch(`${FS}/readers/${readerId}?key=${KEY}&updateMask.fieldPaths=balance`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields: { balance: { doubleValue: newBalance } } }),
+          })
+        }
+      }
+
+      return res.json({ ok: true, rewardEarned, percentageAchieved: Math.round(pct) })
+    }
+
+    // ── Get Khan Academy progress history for a reader ───────────────────────
+    if (req.query.khanaProgress) {
+      const readerId = req.query.khanaProgress
+      const month = req.query.month ? parseInt(req.query.month) : null
+      const year = req.query.year ? parseInt(req.query.year) : null
+
+      const r = await fetch(`${FS}:runQuery?key=${KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ structuredQuery: {
+          from: [{ collectionId: 'khanaAcademy' }],
+          where: { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
+          orderBy: [{ field: { fieldPath: 'month' }, direction: 'DESCENDING' }],
+          limit: 500
+        } }),
+      })
+
+      let entries = []
+      if (r.ok) {
+        entries = (await r.json()).filter(d => d.document).map(d => fromFS(d.document))
+        if (month && year) {
+          const monthStr = `${year}-${String(month).padStart(2, '0')}`
+          entries = entries.filter(e => e.month === monthStr)
+        }
+      }
+
+      return res.json({
+        entries: entries.map(e => ({
+          month: e.month,
+          totalMinutes: e.totalMinutes || 0,
+          targetMinutes: e.targetMinutes || 0,
+          percentageAchieved: e.percentageAchieved || 0,
+          rewardAmount: e.rewardAmount || 0,
+          rewardEarned: e.rewardEarned || 0,
+          createdAt: e.createdAt
+        }))
+      })
+    }
+
+    // ── Get total Khan Academy earnings for a reader ────────────────────────
+    if (req.query.khanaEarnings) {
+      const readerId = req.query.khanaEarnings
+      const r = await fetch(`${FS}:runQuery?key=${KEY}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ structuredQuery: {
+          from: [{ collectionId: 'khanaAcademy' }],
+          where: { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
+          limit: 500
+        } }),
+      })
+
+      let total = 0
+      if (r.ok) {
+        const entries = (await r.json()).filter(d => d.document).map(d => fromFS(d.document))
+        total = entries.reduce((sum, e) => sum + (parseFloat(e.rewardEarned) || 0), 0)
+      }
+
+      return res.json({ total: Math.round(total * 100) / 100 })
     }
 
     // ── Set Alexa PIN for family (stored in alexaPins collection) ───────────

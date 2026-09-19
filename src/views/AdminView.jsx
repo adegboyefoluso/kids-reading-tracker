@@ -5,7 +5,7 @@ import { getSession } from '../services/auth'
 import { requestPushPermission, subscribeToPush, notifyGraded, notifyChatToReader } from '../services/push'
 import { getBuddyChatsForAdmin } from '../services/buddy'
 import { getTestsForFamily } from '../services/tests'
-import { getChores, setChores, getChoreLog, getChoreMonthly, setReaderGoal, getReaderGoal, getLeaderboard, backfillBookRewards, backfillReaderNames, getPayments, makePayment, recalculateBalance, setBalance, updateReaderProfile } from '../services/rewards'
+import { getChores, setChores, getChoreLog, getChoreMonthly, setReaderGoal, getReaderGoal, getLeaderboard, backfillBookRewards, backfillReaderNames, getPayments, makePayment, recalculateBalance, setBalance, updateReaderProfile, setKhanGoal, logKhanHours } from '../services/rewards'
 import Pagination, { PAGE_SIZE } from '../components/Pagination'
 
 const READER_EMOJIS = ['😊', '🦁', '🐯', '🦊', '🐼', '🦋', '🐸', '🦄', '🐙', '🦕', '🚀', '⭐']
@@ -1303,6 +1303,16 @@ function ChoresAdminSection({ familyId, readers, defaultOpen = false }) {
   const [payError, setPayError] = useState(null)
   const [recalculating, setRecalculating] = useState(null)
   const [editingBalance, setEditingBalance] = useState(null) // { readerId, value }
+  const [khanaGoals, setKhanaGoals] = useState({})
+  const [khanaGoalSaving, setKhanaGoalSaving] = useState({})
+  const [khanaGoalSaved, setKhanaGoalSaved] = useState({})
+  const [khanaModalOpen, setKhanaModalOpen] = useState(null) // readerId if open
+  const [khanaMonth, setKhanaMonth] = useState('')
+  const [khanaYear, setKhanaYear] = useState('')
+  const [khanaMinutes, setKhanaMinutes] = useState('')
+  const [khanaReward, setKhanaReward] = useState('')
+  const [khanaSaving, setKhanaSaving] = useState(false)
+  const [khanaError, setKhanaError] = useState(null)
 
   useEffect(() => {
     if (!familyId || !open) return
@@ -1325,13 +1335,16 @@ function ChoresAdminSection({ familyId, readers, defaultOpen = false }) {
       setLeaderboard(lb)
       setPayments(pmts)
       const goalData = {}
+      const khanaGoalData = {}
       await Promise.all(readers.map(async r => {
         try {
           const g = await getReaderGoal(r.id)
           if (g) goalData[r.id] = { yearlyBooks: g.yearlyBooks || '', yearlyAmount: g.yearlyAmount || '' }
+          if (g) khanaGoalData[r.id] = { monthlyKhanMinutes: g.monthlyKhanMinutes || '' }
         } catch {}
       }))
       setGoals(goalData)
+      setKhanaGoals(khanaGoalData)
     } catch {} finally { setLoading(false) }
   }
 
@@ -1361,6 +1374,45 @@ function ChoresAdminSection({ familyId, readers, defaultOpen = false }) {
       setGoalSaved(prev => ({ ...prev, [reader.id]: true }))
       setTimeout(() => setGoalSaved(prev => ({ ...prev, [reader.id]: false })), 2500)
     } catch {} finally { setGoalSaving(prev => ({ ...prev, [reader.id]: false })) }
+  }
+
+  async function handleSaveKhanGoal(reader) {
+    const g = khanaGoals[reader.id] || {}
+    setKhanaGoalSaving(prev => ({ ...prev, [reader.id]: true }))
+    try {
+      await setKhanGoal({ readerId: reader.id, familyId, monthlyKhanMinutes: parseInt(g.monthlyKhanMinutes) || 0 })
+      setKhanaGoalSaved(prev => ({ ...prev, [reader.id]: true }))
+      setTimeout(() => setKhanaGoalSaved(prev => ({ ...prev, [reader.id]: false })), 2500)
+    } catch {} finally { setKhanaGoalSaving(prev => ({ ...prev, [reader.id]: false })) }
+  }
+
+  async function handleLogKhanHours() {
+    if (!khanaModalOpen || !khanaMonth || !khanaYear || khanaMinutes === '') {
+      setKhanaError('Please fill in all fields')
+      return
+    }
+    setKhanaSaving(true)
+    setKhanaError(null)
+    try {
+      await logKhanHours({
+        familyId,
+        readerId: khanaModalOpen,
+        month: parseInt(khanaMonth),
+        year: parseInt(khanaYear),
+        totalMinutes: parseInt(khanaMinutes),
+        rewardAmount: parseFloat(khanaReward) || 0
+      })
+      setKhanaModalOpen(null)
+      setKhanaMonth('')
+      setKhanaYear('')
+      setKhanaMinutes('')
+      setKhanaReward('')
+      load() // Reload to show updated data
+    } catch (e) {
+      setKhanaError(e.message)
+    } finally {
+      setKhanaSaving(false)
+    }
   }
 
   return (
@@ -1692,6 +1744,86 @@ function ChoresAdminSection({ familyId, readers, defaultOpen = false }) {
                   </div>
                 )
               })}
+            </div>
+          )}
+
+          {/* ── Khan Academy Goals & Hours Logging ── */}
+          {readers.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: '0.85rem', color: '#e5e5e5', fontWeight: 600, marginBottom: 4 }}>🎓 Khan Academy Goals</div>
+              <div style={{ color: '#6b7280', fontSize: '0.75rem', marginBottom: 12 }}>
+                Set monthly hour targets. At 70% of target = 100% of reward. Proportional rewards for partial progress.
+              </div>
+              {readers.map(r => {
+                const g = khanaGoals[r.id] || { monthlyKhanMinutes: '' }
+                const perWeek = g.monthlyKhanMinutes ? Math.round(parseInt(g.monthlyKhanMinutes) / 4) : ''
+                return (
+                  <div key={r.id} style={{ background: '#0a0a0a', borderRadius: 8, padding: '12px 14px', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: '1.2rem' }}>{r.emoji || '📚'}</span>
+                      <span style={{ color: '#e5e5e5', fontWeight: 600, fontSize: '0.88rem' }}>{r.name}</span>
+                      {perWeek && <span style={{ color: '#60a5fa', fontSize: '0.75rem', marginLeft: 'auto' }}>{perWeek} min/week</span>}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <input
+                        type="number" min="0" placeholder="Minutes / month" value={g.monthlyKhanMinutes}
+                        onChange={e => setKhanaGoals(prev => ({ ...prev, [r.id]: { ...prev[r.id], monthlyKhanMinutes: e.target.value } }))}
+                        style={{ width: 140, fontSize: '0.82rem' }}
+                      />
+                      <button className="btn btn-primary" onClick={() => handleSaveKhanGoal(r)} disabled={khanaGoalSaving[r.id]} style={{ padding: '6px 14px', fontSize: '0.78rem' }}>
+                        {khanaGoalSaving[r.id] ? '…' : khanaGoalSaved[r.id] ? '✅' : 'Save Goal'}
+                      </button>
+                      <button className="btn btn-secondary" onClick={() => {
+                        const now = new Date()
+                        setKhanaModalOpen(r.id)
+                        setKhanaMonth(String(now.getMonth() + 1))
+                        setKhanaYear(String(now.getFullYear()))
+                        setKhanaMinutes('')
+                        setKhanaReward('')
+                        setKhanaError(null)
+                      }} style={{ padding: '6px 14px', fontSize: '0.78rem' }}>
+                        Log Hours
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* ── Khan hours logging modal ── */}
+          {khanaModalOpen && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+              <div style={{ background: '#141414', border: '1px solid #1e1e1e', borderRadius: 14, padding: 24, width: '100%', maxWidth: 400 }}>
+                <h3 style={{ color: '#e5e5e5', marginBottom: 16, fontSize: '1.1rem' }}>🎓 Log Khan Academy Hours</h3>
+
+                <label className="text-sm text-muted">Month</label>
+                <select value={khanaMonth} onChange={e => setKhanaMonth(e.target.value)} style={{ width: '100%', marginBottom: 14, background: '#141414', color: '#e5e5e5', border: '1px solid #1e1e1e', borderRadius: 6, padding: '8px 12px' }}>
+                  <option value="">— Select month —</option>
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const m = i + 1
+                    return <option key={m} value={String(m)}>{new Date(2000, i, 1).toLocaleString('default', { month: 'long' })}</option>
+                  })}
+                </select>
+
+                <label className="text-sm text-muted">Year</label>
+                <input type="number" value={khanaYear} onChange={e => setKhanaYear(e.target.value)} placeholder="2026" style={{ width: '100%', marginBottom: 14 }} />
+
+                <label className="text-sm text-muted">Total Minutes</label>
+                <input type="number" min="0" value={khanaMinutes} onChange={e => setKhanaMinutes(e.target.value)} placeholder="e.g., 300" style={{ width: '100%', marginBottom: 14 }} />
+
+                <label className="text-sm text-muted">Reward Amount ($)</label>
+                <input type="number" min="0" step="0.50" value={khanaReward} onChange={e => setKhanaReward(e.target.value)} placeholder="e.g., 10" style={{ width: '100%', marginBottom: 14 }} />
+
+                {khanaError && <div className="error-banner" style={{ marginBottom: 12 }}>❌ {khanaError}</div>}
+
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button className="btn btn-primary w-full" onClick={handleLogKhanHours} disabled={khanaSaving}>
+                    {khanaSaving ? 'Saving…' : '✅ Log Hours'}
+                  </button>
+                  <button className="btn btn-secondary" onClick={() => setKhanaModalOpen(null)} disabled={khanaSaving}>Cancel</button>
+                </div>
+              </div>
             </div>
           )}
 

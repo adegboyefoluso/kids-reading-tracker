@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getSession } from '../services/auth'
-import { getChores, logChore, getLedger, getEarningsHistory, getPayments, getReaderProfile, getTotalEarnings } from '../services/rewards'
+import { getChores, logChore, getLedger, getEarningsHistory, getPayments, getReaderProfile, getTotalEarnings, getKhanProgress } from '../services/rewards'
 
 // ── Earnings Calendar ─────────────────────────────────────────────────────
 function EarningsCalendar({ readerId, myPayments, tc }) {
@@ -8,15 +8,20 @@ function EarningsCalendar({ readerId, myPayments, tc }) {
   const [year, setYear]     = useState(now.getFullYear())
   const [month, setMonth]   = useState(now.getMonth() + 1)
   const [data, setData]     = useState(null)
+  const [khanaData, setKhanaData] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!readerId) return
     setLoading(true)
-    getEarningsHistory(readerId, year, month)
-      .then(d => setData(d))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false))
+    Promise.all([
+      getEarningsHistory(readerId, year, month)
+        .then(d => setData(d))
+        .catch(() => setData(null)),
+      getKhanProgress(readerId, month, year)
+        .then(d => setKhanaData(d))
+        .catch(() => setKhanaData(null))
+    ]).finally(() => setLoading(false))
   }, [readerId, year, month])
 
   function prevMonth() {
@@ -50,7 +55,7 @@ function EarningsCalendar({ readerId, myPayments, tc }) {
         <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '24px 0' }}>Could not load earnings.</div>
       ) : (
         <>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 14 }}>
             <div style={{ background: '#0a1a0a', border: '1px solid #166534', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
               <div style={{ color: '#4ade80', fontSize: '0.65rem', marginBottom: 4 }}>📚 BOOKS</div>
               <div style={{ color: '#22c55e', fontWeight: 700, fontSize: '1rem' }}>${(data.totals.books || 0).toFixed(2)}</div>
@@ -60,9 +65,14 @@ function EarningsCalendar({ readerId, myPayments, tc }) {
               <div style={{ color: '#60a5fa', fontSize: '0.65rem', marginBottom: 4 }}>🧹 CHORES</div>
               <div style={{ color: '#93c5fd', fontWeight: 700, fontSize: '1rem' }}>${(data.totals.chores || 0).toFixed(2)}</div>
             </div>
+            <div style={{ background: '#0a100a', border: '1px solid #1e5a3a', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
+              <div style={{ color: '#7dd3fc', fontSize: '0.65rem', marginBottom: 4 }}>🎓 KHAN</div>
+              <div style={{ color: '#06b6d4', fontWeight: 700, fontSize: '1rem' }}>{khanaData?.entries?.[0]?.totalMinutes || 0}m</div>
+              <div style={{ color: '#2a5a5a', fontSize: '0.65rem', marginTop: 2 }}>{khanaData?.entries?.[0]?.percentageAchieved || 0}%</div>
+            </div>
             <div style={{ background: '#1a1a0a', border: '1px solid #854d0e', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
               <div style={{ color: '#fbbf24', fontSize: '0.65rem', marginBottom: 4 }}>EARNED</div>
-              <div style={{ color: '#fde68a', fontWeight: 700, fontSize: '1rem' }}>${(data.totals.total || 0).toFixed(2)}</div>
+              <div style={{ color: '#fde68a', fontWeight: 700, fontSize: '1rem' }}>${((data.totals.total || 0) + (khanaData?.entries?.[0]?.rewardEarned || 0)).toFixed(2)}</div>
             </div>
           </div>
 
