@@ -588,19 +588,26 @@ export default async function handler(req, res) {
         days[day].bookTitles.push(b.title || 'Book')
       }
       for (const e of monthLedger) {
-        if (e.type !== 'chore') continue
         const day = (e.createdAt || '').split('T')[0]
         if (!day) continue
         const amt = parseFloat(e.amount) || 0
-        if (!days[day]) days[day] = { books: 0, bookTitles: [], chores: 0, choreNames: [] }
-        days[day].chores = Math.round((days[day].chores + amt) * 100) / 100
-        days[day].choreNames.push(e.description || 'Chore')
+
+        if (e.type === 'chore') {
+          if (!days[day]) days[day] = { books: 0, bookTitles: [], chores: 0, choreNames: [], khan: 0, khanEntries: [] }
+          days[day].chores = Math.round((days[day].chores + amt) * 100) / 100
+          days[day].choreNames.push(e.description || 'Chore')
+        } else if (e.type === 'khan') {
+          if (!days[day]) days[day] = { books: 0, bookTitles: [], chores: 0, choreNames: [], khan: 0, khanEntries: [] }
+          days[day].khan = Math.round((days[day].khan + amt) * 100) / 100
+          days[day].khanEntries.push(e.description || 'Khan Academy')
+        }
       }
       for (const day of Object.keys(days)) {
-        days[day].total = Math.round((days[day].books + days[day].chores) * 100) / 100
+        days[day].total = Math.round((days[day].books + days[day].chores + (days[day].khan || 0)) * 100) / 100
       }
 
       const choreTotal = monthLedger.filter(e => e.type === 'chore').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
+      const khanTotal = monthLedger.filter(e => e.type === 'khan').reduce((s, e) => s + (parseFloat(e.amount) || 0), 0)
       return res.json({
         month: monthStr,
         perBook,
@@ -610,7 +617,8 @@ export default async function handler(req, res) {
           bookCount: monthBooks.length,
           books: Math.round(monthBooks.length * perBook * 100) / 100,
           chores: Math.round(choreTotal * 100) / 100,
-          total: Math.round((monthBooks.length * perBook + choreTotal) * 100) / 100,
+          khan: Math.round(khanTotal * 100) / 100,
+          total: Math.round((monthBooks.length * perBook + choreTotal + khanTotal) * 100) / 100,
         },
       })
     }

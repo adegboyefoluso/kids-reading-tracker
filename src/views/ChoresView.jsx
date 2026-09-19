@@ -116,13 +116,18 @@ function EarningsCalendar({ readerId, myPayments, tc }) {
                       <span style={{ color: '#22c55e', fontWeight: 700, fontSize: '0.95rem' }}>+${info.total.toFixed(2)}</span>
                     </div>
                     {info.books > 0 && (
-                      <div style={{ fontSize: '0.76rem', color: '#4ade80', marginBottom: info.chores > 0 ? 3 : 0 }}>
+                      <div style={{ fontSize: '0.76rem', color: '#4ade80', marginBottom: (info.chores > 0 || info.khan > 0) ? 3 : 0 }}>
                         📚 ${info.books.toFixed(2)} · {info.bookTitles.join(', ')}
                       </div>
                     )}
                     {info.chores > 0 && (
-                      <div style={{ fontSize: '0.76rem', color: '#60a5fa' }}>
+                      <div style={{ fontSize: '0.76rem', color: '#60a5fa', marginBottom: info.khan > 0 ? 3 : 0 }}>
                         🧹 ${info.chores.toFixed(2)} · {info.choreNames.join(', ')}
+                      </div>
+                    )}
+                    {info.khan > 0 && (
+                      <div style={{ fontSize: '0.76rem', color: '#06b6d4' }}>
+                        🎓 ${info.khan.toFixed(2)} · {info.khanEntries.join(', ')}
                       </div>
                     )}
                   </div>
