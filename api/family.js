@@ -1394,28 +1394,49 @@ export default async function handler(req, res) {
     // ── Get Khan Academy progress history for a reader ───────────────────────
     if (req.query.khanaProgress) {
       const readerId = req.query.khanaProgress
-      const month = req.query.month ? parseInt(req.query.month) : null
-      const year = req.query.year ? parseInt(req.query.year) : null
 
-      const r = await fetch(`${FS}:runQuery?key=${KEY}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ structuredQuery: {
-          from: [{ collectionId: 'khanaAcademy' }],
-          where: { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
-          orderBy: [{ field: { fieldPath: 'month' }, direction: 'DESCENDING' }],
-          limit: 500
-        } }),
-      })
+      // Fetch both khanaAcademy entries AND Khan ledger entries
+      const [khanaR, ledgerR] = await Promise.all([
+        fetch(`${FS}:runQuery?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ structuredQuery: {
+            from: [{ collectionId: 'khanaAcademy' }],
+            where: { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
+            orderBy: [{ field: { fieldPath: 'month' }, direction: 'DESCENDING' }],
+            limit: 500
+          } }) }),
+        fetch(`${FS}:runQuery?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ structuredQuery: {
+            from: [{ collectionId: 'ledger' }],
+            where: { compositeFilter: { op: 'AND', filters: [
+              { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
+              { fieldFilter: { field: { fieldPath: 'type' }, op: 'EQUAL', value: { stringValue: 'khan' } } }
+            ] } },
+            limit: 500
+          } }) }),
+      ])
 
       let entries = []
-      if (r.ok) {
-        const allDocs = (await r.json()).filter(d => d.document).map(d => fromFS(d.document))
-        // Always return ALL entries for the reader, optionally filtered by month/year
-        if (month && year) {
-          const monthStr = `${year}-${String(month).padStart(2, '0')}`
-          entries = allDocs.filter(e => e.month === monthStr)
-        } else {
-          entries = allDocs
+      const khanaEntries = khanaR.ok ? (await khanaR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
+      const ledgerEntries = ledgerR.ok ? (await ledgerR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
+
+      // If khanaAcademy entries exist, use those; otherwise build from ledger
+      if (khanaEntries.length > 0) {
+        entries = khanaEntries
+      } else if (ledgerEntries.length > 0) {
+        // Build entries from ledger if khanaAcademy is empty
+        for (const entry of ledgerEntries) {
+          const month = entry.description?.match(/\((\d{4}-\d{2})\)/)?.[1] || ''
+          if (month) {
+            entries.push({
+              month,
+              totalMinutes: 0,
+              targetMinutes: 0,
+              percentageAchieved: 0,
+              rewardAmount: 0,
+              rewardEarned: entry.amount || 0,
+              createdAt: entry.createdAt
+            })
+          }
         }
       }
 
