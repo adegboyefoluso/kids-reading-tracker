@@ -77,7 +77,7 @@ function EarningsCalendar({ readerId, myPayments, tc }) {
             </div>
             <div style={{ background: '#1a1a0a', border: '1px solid #854d0e', borderRadius: 10, padding: '10px 8px', textAlign: 'center' }}>
               <div style={{ color: '#fbbf24', fontSize: '0.65rem', marginBottom: 4 }}>EARNED</div>
-              <div style={{ color: '#fde68a', fontWeight: 700, fontSize: '1rem' }}>${((data.totals.total || 0) + (khanaData?.entries?.[0]?.rewardEarned || 0)).toFixed(2)}</div>
+              <div style={{ color: '#fde68a', fontWeight: 700, fontSize: '1rem' }}>${(data.totals.total || 0).toFixed(2)}</div>
             </div>
           </div>
 
