@@ -756,6 +756,102 @@ export default async function handler(req, res) {
       })
     }
 
+    // ── Get Khan Academy progress history for a reader ───────────────────────
+    if (req.query.khanaProgress) {
+      try {
+        const readerId = req.query.khanaProgress
+
+        // Fetch both khanaAcademy entries AND Khan ledger entries
+        const [khanaR, ledgerR] = await Promise.all([
+          fetch(`${FS}:runQuery?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ structuredQuery: {
+              from: [{ collectionId: 'khanaAcademy' }],
+              where: { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
+              orderBy: [{ field: { fieldPath: 'month' }, direction: 'DESCENDING' }],
+              limit: 500
+            } }) }),
+          fetch(`${FS}:runQuery?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ structuredQuery: {
+              from: [{ collectionId: 'ledger' }],
+              where: { compositeFilter: { op: 'AND', filters: [
+                { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
+                { fieldFilter: { field: { fieldPath: 'type' }, op: 'EQUAL', value: { stringValue: 'khan' } } }
+              ] } },
+              limit: 500
+            } }) }),
+        ])
+
+        let entries = []
+        const khanaEntries = khanaR.ok ? (await khanaR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
+        const ledgerEntries = ledgerR.ok ? (await ledgerR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
+
+        // If khanaAcademy entries exist, use those; otherwise build from ledger
+        if (khanaEntries.length > 0) {
+          entries = khanaEntries
+        }
+
+        // Also add any ledger Khan entries
+        if (ledgerEntries.length > 0) {
+          for (const entry of ledgerEntries) {
+            const monthMatch = entry.description?.match(/\(([0-9]{4}-[0-9]{2})\)/)
+            const month = monthMatch ? monthMatch[1] : ''
+            if (month) {
+              entries.push({
+                month,
+                totalMinutes: 0,
+                targetMinutes: 0,
+                percentageAchieved: 0,
+                rewardAmount: 0,
+                rewardEarned: typeof entry.amount === 'number' ? entry.amount : (parseFloat(entry.amount) || 0),
+                createdAt: entry.createdAt
+              })
+            }
+          }
+        }
+
+        return res.json({
+          entries: entries.map(e => ({
+            month: e.month,
+            totalMinutes: e.totalMinutes || 0,
+            targetMinutes: e.targetMinutes || 0,
+            percentageAchieved: e.percentageAchieved || 0,
+            rewardAmount: e.rewardAmount || 0,
+            rewardEarned: e.rewardEarned || 0,
+            createdAt: e.createdAt
+          }))
+        })
+      } catch (err) {
+        console.error('khanaProgress error:', err)
+        return res.json({ entries: [], error: err.message })
+      }
+    }
+
+    // ── Get total Khan Academy earnings for a reader ────────────────────────
+    if (req.query.khanaEarnings) {
+      try {
+        const readerId = req.query.khanaEarnings
+        const r = await fetch(`${FS}:runQuery?key=${KEY}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ structuredQuery: {
+            from: [{ collectionId: 'khanaAcademy' }],
+            where: { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
+            limit: 500
+          } }),
+        })
+
+        let total = 0
+        if (r.ok) {
+          const entries = (await r.json()).filter(d => d.document).map(d => fromFS(d.document))
+          total = entries.reduce((sum, e) => sum + (parseFloat(e.rewardEarned) || 0), 0)
+        }
+
+        return res.json({ total: Math.round(total * 100) / 100 })
+      } catch (err) {
+        console.error('khanaEarnings error:', err)
+        return res.json({ total: 0, error: err.message })
+      }
+    }
+
     return res.status(400).json({ error: 'Unknown GET query' })
   }
 
@@ -1389,92 +1485,6 @@ export default async function handler(req, res) {
       }
 
       return res.json({ ok: true, rewardEarned, percentageAchieved: Math.round(pct) })
-    }
-
-    // ── Get Khan Academy progress history for a reader ───────────────────────
-    if (req.query.khanaProgress) {
-      const readerId = req.query.khanaProgress
-
-      // Fetch both khanaAcademy entries AND Khan ledger entries
-      const [khanaR, ledgerR] = await Promise.all([
-        fetch(`${FS}:runQuery?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ structuredQuery: {
-            from: [{ collectionId: 'khanaAcademy' }],
-            where: { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
-            orderBy: [{ field: { fieldPath: 'month' }, direction: 'DESCENDING' }],
-            limit: 500
-          } }) }),
-        fetch(`${FS}:runQuery?key=${KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ structuredQuery: {
-            from: [{ collectionId: 'ledger' }],
-            where: { compositeFilter: { op: 'AND', filters: [
-              { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
-              { fieldFilter: { field: { fieldPath: 'type' }, op: 'EQUAL', value: { stringValue: 'khan' } } }
-            ] } },
-            limit: 500
-          } }) }),
-      ])
-
-      let entries = []
-      const khanaEntries = khanaR.ok ? (await khanaR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
-      const ledgerEntries = ledgerR.ok ? (await ledgerR.json()).filter(d => d.document).map(d => fromFS(d.document)) : []
-
-      // If khanaAcademy entries exist, use those; otherwise build from ledger
-      if (khanaEntries.length > 0) {
-        entries = khanaEntries
-      }
-
-      // Also add any ledger Khan entries
-      if (ledgerEntries.length > 0) {
-        for (const entry of ledgerEntries) {
-          const monthMatch = entry.description?.match(/\(([0-9]{4}-[0-9]{2})\)/)
-          const month = monthMatch ? monthMatch[1] : ''
-          if (month) {
-            entries.push({
-              month,
-              totalMinutes: 0,
-              targetMinutes: 0,
-              percentageAchieved: 0,
-              rewardAmount: 0,
-              rewardEarned: typeof entry.amount === 'number' ? entry.amount : (parseFloat(entry.amount) || 0),
-              createdAt: entry.createdAt
-            })
-          }
-        }
-      }
-
-      return res.json({
-        entries: entries.map(e => ({
-          month: e.month,
-          totalMinutes: e.totalMinutes || 0,
-          targetMinutes: e.targetMinutes || 0,
-          percentageAchieved: e.percentageAchieved || 0,
-          rewardAmount: e.rewardAmount || 0,
-          rewardEarned: e.rewardEarned || 0,
-          createdAt: e.createdAt
-        }))
-      })
-    }
-
-    // ── Get total Khan Academy earnings for a reader ────────────────────────
-    if (req.query.khanaEarnings) {
-      const readerId = req.query.khanaEarnings
-      const r = await fetch(`${FS}:runQuery?key=${KEY}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ structuredQuery: {
-          from: [{ collectionId: 'khanaAcademy' }],
-          where: { fieldFilter: { field: { fieldPath: 'readerId' }, op: 'EQUAL', value: { stringValue: readerId } } },
-          limit: 500
-        } }),
-      })
-
-      let total = 0
-      if (r.ok) {
-        const entries = (await r.json()).filter(d => d.document).map(d => fromFS(d.document))
-        total = entries.reduce((sum, e) => sum + (parseFloat(e.rewardEarned) || 0), 0)
-      }
-
-      return res.json({ total: Math.round(total * 100) / 100 })
     }
 
     // ── Set Alexa PIN for family (stored in alexaPins collection) ───────────
