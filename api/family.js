@@ -1422,10 +1422,13 @@ export default async function handler(req, res) {
       // If khanaAcademy entries exist, use those; otherwise build from ledger
       if (khanaEntries.length > 0) {
         entries = khanaEntries
-      } else if (ledgerEntries.length > 0) {
-        // Build entries from ledger if khanaAcademy is empty
+      }
+
+      // Also add any ledger Khan entries
+      if (ledgerEntries.length > 0) {
         for (const entry of ledgerEntries) {
-          const month = entry.description?.match(/\((\d{4}-\d{2})\)/)?.[1] || ''
+          const monthMatch = entry.description?.match(/\(([0-9]{4}-[0-9]{2})\)/)
+          const month = monthMatch ? monthMatch[1] : ''
           if (month) {
             entries.push({
               month,
@@ -1433,7 +1436,7 @@ export default async function handler(req, res) {
               targetMinutes: 0,
               percentageAchieved: 0,
               rewardAmount: 0,
-              rewardEarned: entry.amount || 0,
+              rewardEarned: typeof entry.amount === 'number' ? entry.amount : (parseFloat(entry.amount) || 0),
               createdAt: entry.createdAt
             })
           }
