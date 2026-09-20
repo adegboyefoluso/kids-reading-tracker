@@ -30,7 +30,7 @@ export default function LandingView() {
         'Parent approves and credits rewards',
         'Track chore history and earnings',
       ],
-      color: '#3b82f6'
+      color: '#fbbf24'
     },
     {
       id: 'khan',
@@ -56,21 +56,21 @@ export default function LandingView() {
         'Track spending and balance growth',
         'Foundation for financial literacy',
       ],
-      color: '#f59e0b'
+      color: '#fbbf24'
     },
   ]
 
   return (
-    <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', minHeight: '100vh', color: '#fff' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh', color: 'var(--text)' }}>
       {/* Navigation */}
-      <div style={{ background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '16px 20px', position: 'sticky', top: 0, zIndex: 100 }}>
+      <div style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--bg-shelf)', padding: '16px 20px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#fbbf24' }}>📖 Kids Reading Tracker</div>
+          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--gold)' }}>📖 Kids Reading Tracker</div>
           <button
             onClick={() => navigate('/setup')}
             style={{
-              background: '#fbbf24',
-              color: '#000',
+              background: 'var(--gold)',
+              color: '#0a0a0a',
               border: 'none',
               borderRadius: 8,
               padding: '10px 24px',
@@ -79,8 +79,8 @@ export default function LandingView() {
               fontSize: '0.9rem',
               transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.target.style.background = '#f59e0b'}
-            onMouseLeave={(e) => e.target.style.background = '#fbbf24'}
+            onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+            onMouseLeave={(e) => e.target.style.opacity = '1'}
           >
             Get Started →
           </button>
@@ -89,33 +89,32 @@ export default function LandingView() {
 
       {/* Hero Section */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '80px 20px 60px', textAlign: 'center' }}>
-        <div style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: 16, background: 'linear-gradient(135deg, #fbbf24, #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+        <div style={{ fontSize: '3.5rem', fontWeight: 900, marginBottom: 16, color: 'var(--gold)' }}>
           Reward Kids for Learning
         </div>
-        <div style={{ fontSize: '1.25rem', color: '#cbd5e1', marginBottom: 32, maxWidth: 600, margin: '0 auto', lineHeight: 1.6 }}>
+        <div style={{ fontSize: '1.25rem', color: 'var(--text-muted)', marginBottom: 32, maxWidth: 600, margin: '0 auto', lineHeight: 1.6 }}>
           Turn reading, chores, and online learning into real rewards. Teach financial literacy while motivating your kids to read more and learn better.
         </div>
         <button
           onClick={() => navigate('/setup')}
           style={{
-            background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-            color: '#000',
+            background: 'var(--gold)',
+            color: '#0a0a0a',
             border: 'none',
             borderRadius: 12,
             padding: '16px 40px',
             fontWeight: 800,
             cursor: 'pointer',
             fontSize: '1.1rem',
-            transition: 'all 0.3s',
-            boxShadow: '0 20px 40px rgba(251, 191, 36, 0.3)'
+            transition: 'all 0.3s'
           }}
           onMouseEnter={(e) => {
             e.target.style.transform = 'translateY(-3px)'
-            e.target.style.boxShadow = '0 25px 50px rgba(251, 191, 36, 0.4)'
+            e.target.style.opacity = '0.8'
           }}
           onMouseLeave={(e) => {
             e.target.style.transform = 'translateY(0)'
-            e.target.style.boxShadow = '0 20px 40px rgba(251, 191, 36, 0.3)'
+            e.target.style.opacity = '1'
           }}
         >
           Start for Free
@@ -125,8 +124,8 @@ export default function LandingView() {
       {/* Features Grid */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: 16 }}>How It Works</div>
-          <div style={{ fontSize: '1.1rem', color: '#cbd5e1' }}>Four powerful ways to motivate and reward</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: 16, color: 'var(--text)' }}>How It Works</div>
+          <div style={{ fontSize: '1.1rem', color: 'var(--text-muted)' }}>Four powerful ways to motivate and reward</div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, marginBottom: 60 }}>
@@ -135,25 +134,23 @@ export default function LandingView() {
               key={feature.id}
               onClick={() => setActiveTab(activeTab === feature.id ? null : feature.id)}
               style={{
-                background: `linear-gradient(135deg, ${feature.color}11, ${feature.color}22)`,
-                border: `2px solid ${feature.color}44`,
+                background: 'var(--bg-card)',
+                border: `2px solid ${activeTab === feature.id ? feature.color : 'var(--bg-shelf)'}`,
                 borderRadius: 16,
                 padding: 32,
                 cursor: 'pointer',
                 transition: 'all 0.3s',
                 transform: activeTab === feature.id ? 'translateY(-8px)' : 'translateY(0)',
-                boxShadow: activeTab === feature.id ? `0 20px 40px ${feature.color}33` : 'none'
+                boxShadow: activeTab === feature.id ? `0 0 20px ${feature.color}44` : 'none'
               }}
               onMouseEnter={(e) => {
                 if (activeTab !== feature.id) {
                   e.currentTarget.style.transform = 'translateY(-4px)'
-                  e.currentTarget.style.borderColor = `${feature.color}88`
                 }
               }}
               onMouseLeave={(e) => {
                 if (activeTab !== feature.id) {
                   e.currentTarget.style.transform = 'translateY(0)'
-                  e.currentTarget.style.borderColor = `${feature.color}44`
                 }
               }}
             >
@@ -161,14 +158,14 @@ export default function LandingView() {
               <div style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: 8, color: feature.color }}>
                 {feature.title}
               </div>
-              <div style={{ color: '#cbd5e1', marginBottom: 16, fontSize: '0.95rem' }}>
+              <div style={{ color: 'var(--text-muted)', marginBottom: 16, fontSize: '0.95rem' }}>
                 {feature.description}
               </div>
 
               {activeTab === feature.id && (
-                <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${feature.color}44` }}>
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--bg-shelf)' }}>
                   {feature.details.map((detail, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10, color: '#e2e8f0', fontSize: '0.9rem' }}>
+                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10, color: 'var(--text)', fontSize: '0.9rem' }}>
                       <span style={{ color: feature.color, fontWeight: 700 }}>✓</span>
                       <span>{detail}</span>
                     </div>
@@ -181,10 +178,10 @@ export default function LandingView() {
       </div>
 
       {/* Benefits Section */}
-      <div style={{ background: 'rgba(100, 150, 0, 0.1)', padding: '60px 20px', borderTop: '1px solid rgba(255,255,255,0.1)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '60px 20px', borderTop: '1px solid var(--bg-shelf)', borderBottom: '1px solid var(--bg-shelf)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: 50 }}>
-            <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: 16 }}>Why Parents Love It</div>
+            <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: 16, color: 'var(--text)' }}>Why Parents Love It</div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 30 }}>
@@ -198,8 +195,8 @@ export default function LandingView() {
             ].map((benefit, i) => (
               <div key={i} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: '2.5rem', marginBottom: 12 }}>{benefit.icon}</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 6 }}>{benefit.title}</div>
-                <div style={{ color: '#cbd5e1', fontSize: '0.9rem' }}>{benefit.desc}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 6, color: 'var(--text)' }}>{benefit.title}</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>{benefit.desc}</div>
               </div>
             ))}
           </div>
@@ -209,7 +206,7 @@ export default function LandingView() {
       {/* How to Start */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '60px 20px' }}>
         <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: 16 }}>Get Started in 3 Steps</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: 16, color: 'var(--text)' }}>Get Started in 3 Steps</div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 30 }}>
@@ -230,19 +227,19 @@ export default function LandingView() {
               desc: 'Scan books, log chores, record Khan hours, and watch kids earn rewards!'
             },
           ].map((step, i) => (
-            <div key={i} style={{ background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 32 }}>
-              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: '#fbbf24', marginBottom: 16 }}>{step.num}</div>
-              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 12 }}>{step.title}</div>
-              <div style={{ color: '#cbd5e1', lineHeight: 1.6 }}>{step.desc}</div>
+            <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--bg-shelf)', borderRadius: 12, padding: 32 }}>
+              <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--gold)', marginBottom: 16 }}>{step.num}</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 12, color: 'var(--text)' }}>{step.title}</div>
+              <div style={{ color: 'var(--text-muted)', lineHeight: 1.6 }}>{step.desc}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* Features List */}
-      <div style={{ background: 'rgba(59, 130, 246, 0.1)', padding: '60px 20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '60px 20px', borderTop: '1px solid var(--bg-shelf)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 40, textAlign: 'center' }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 40, textAlign: 'center', color: 'var(--text)' }}>
             Packed with Features
           </div>
 
@@ -261,7 +258,7 @@ export default function LandingView() {
               '💰 Payment Tracking',
               '🎯 Reading Goals',
             ].map((feature, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0' }}>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', color: 'var(--text)' }}>
                 <span style={{ fontSize: '1.2rem' }}>{feature.split(' ')[0]}</span>
                 <span>{feature.split(' ').slice(1).join(' ')}</span>
               </div>
@@ -271,19 +268,19 @@ export default function LandingView() {
       </div>
 
       {/* CTA Footer */}
-      <div style={{ background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid var(--bg-shelf)' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 16 }}>
+          <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 16, color: 'var(--text)' }}>
             Ready to Transform Reading?
           </div>
-          <div style={{ fontSize: '1.1rem', color: '#cbd5e1', marginBottom: 32, lineHeight: 1.6 }}>
+          <div style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 32, lineHeight: 1.6 }}>
             Create your free family account today and start rewarding your kids for every book they read, chore they complete, and hour they learn.
           </div>
           <button
             onClick={() => navigate('/setup')}
             style={{
-              background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
-              color: '#000',
+              background: 'var(--gold)',
+              color: '#0a0a0a',
               border: 'none',
               borderRadius: 12,
               padding: '14px 36px',
@@ -302,15 +299,15 @@ export default function LandingView() {
           >
             Get Started Free
           </button>
-          <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
             No credit card required • Free forever • Open source
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div style={{ background: '#0f172a', padding: '20px', textAlign: 'center', color: '#64748b', fontSize: '0.85rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <div>© 2026 Kids Reading Tracker • <a href="#" style={{ color: '#60a5fa', textDecoration: 'none' }}>GitHub</a> • <a href="#" style={{ color: '#60a5fa', textDecoration: 'none' }}>Docs</a></div>
+      <div style={{ background: 'var(--bg)', padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', borderTop: '1px solid var(--bg-shelf)' }}>
+        <div>© 2026 Kids Reading Tracker • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>GitHub</a> • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Docs</a></div>
       </div>
     </div>
   )
