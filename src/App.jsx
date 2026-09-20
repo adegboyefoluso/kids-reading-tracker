@@ -41,7 +41,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={getSession() ? <ScannerView /> : <LandingView />} />
             <Route path="/landing" element={<LandingView />} />
-            <Route path="/signin" element={<ScannerView />} />
+            <Route path="/signin" element={getSession() ? <Navigate to="/" replace /> : <ScannerView />} />
             <Route path="/scan" element={<Navigate to="/" replace />} />
             <Route path="/kiosk" element={<KioskView />} />
             <Route path="/admin" element={<AdminView />} />
