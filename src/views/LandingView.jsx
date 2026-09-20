@@ -52,7 +52,7 @@ export default function LandingView() {
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--gold)' }}>📖 Kids Reading Tracker</div>
           <div style={{ display: 'flex', gap: 12 }}>
             <button
-              onClick={() => navigate('/setup')}
+              onClick={() => navigate('/signin')}
               style={{
                 background: 'transparent',
                 color: 'var(--text)',
