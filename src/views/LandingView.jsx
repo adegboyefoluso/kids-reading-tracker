@@ -277,32 +277,32 @@ export default function LandingView() {
       </div>
 
       {/* Single Footer */}
-      <div style={{ background: 'var(--bg-card)', padding: '60px 20px 30px', textAlign: 'center', borderTop: '1px solid var(--bg-shelf)' }}>
+      <div style={{ background: 'var(--bg-card)', padding: '40px 20px', textAlign: 'center', borderTop: '1px solid var(--bg-shelf)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 40, marginBottom: 40 }}>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, color: 'var(--text)' }}>📖 Reading Tracker</div>
-              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 30, marginBottom: 0 }}>
+            <div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 12, color: 'var(--text)' }}>Navigation</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                <li style={{ marginBottom: 6 }}><a href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>Home</a></li>
+                <li style={{ marginBottom: 6 }}><a href="/admin" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>Admin Panel</a></li>
+                <li style={{ marginBottom: 6 }}><a href="/analytics" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>Analytics</a></li>
+                <li><a href="/leaderboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>Leaderboard</a></li>
+              </ul>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 12, color: 'var(--text)' }}>Features</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                <li style={{ marginBottom: 6 }}><a href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>Book Scanner</a></li>
+                <li style={{ marginBottom: 6 }}><a href="/chores" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>Chores & Rewards</a></li>
+                <li style={{ marginBottom: 6 }}><a href="/analytics" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>Reading Analytics</a></li>
+                <li><a href="/leaderboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.85rem' }}>Gamification</a></li>
+              </ul>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: 12, color: 'var(--text)' }}>About</div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 1.6, margin: 0 }}>
                 Track family reading progress, celebrate achievements, and make reading fun with rewards.
               </p>
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, color: 'var(--text)' }}>Navigation</div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                <li><a href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Home</a></li>
-                <li><a href="/admin" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Admin Panel</a></li>
-                <li><a href="/analytics" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Analytics</a></li>
-                <li><a href="/leaderboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Leaderboard</a></li>
-              </ul>
-            </div>
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, color: 'var(--text)' }}>Features</div>
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                <li><a href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Book Scanner</a></li>
-                <li><a href="/chores" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Chores & Rewards</a></li>
-                <li><a href="/analytics" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Reading Analytics</a></li>
-                <li><a href="/leaderboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Gamification</a></li>
-              </ul>
             </div>
           </div>
         </div>
