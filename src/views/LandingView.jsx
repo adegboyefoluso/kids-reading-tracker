@@ -245,37 +245,6 @@ export default function LandingView() {
         </div>
       </div>
 
-      {/* Features List */}
-      <div style={{ background: 'var(--bg-card)', padding: '60px 20px', borderTop: '1px solid var(--bg-shelf)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 40, textAlign: 'center', color: 'var(--text)' }}>
-            Packed with Features
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
-            {[
-              '📚 ISBN Barcode Scanning',
-              '🎥 Real-time TV Display',
-              '💳 Balance Tracking',
-              '🏆 Leaderboards',
-              '🎓 Khan Academy Integration',
-              '📊 Reading Analytics',
-              '🧮 Chore Management',
-              '📱 Mobile App (PWA)',
-              '🌙 Dark/Light Mode',
-              '👥 Multi-reader Support',
-              '💰 Payment Tracking',
-              '🎯 Reading Goals',
-            ].map((feature, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', color: 'var(--text)' }}>
-                <span style={{ fontSize: '1.2rem' }}>{feature.split(' ')[0]}</span>
-                <span>{feature.split(' ').slice(1).join(' ')}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Single Footer */}
       <div style={{ background: 'var(--bg-card)', padding: '40px 20px', textAlign: 'center', borderTop: '1px solid var(--bg-shelf)' }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
