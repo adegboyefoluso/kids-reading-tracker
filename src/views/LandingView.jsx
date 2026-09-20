@@ -43,7 +43,9 @@ export default function LandingView() {
         'Proportional rewards: 70% target = 100% reward',
         'Track weekly progress toward goals',
       ],
-      color: '#06b6d4'
+      color: '#06b6d4',
+      link: 'https://www.khanacademy.org/signup',
+      linkText: 'Create Khan Academy Account'
     },
     {
       id: 'greenlight',
@@ -56,7 +58,9 @@ export default function LandingView() {
         'Track spending and balance growth',
         'Foundation for financial literacy',
       ],
-      color: '#fbbf24'
+      color: '#fbbf24',
+      link: 'https://www.greenlight.com',
+      linkText: 'Open Green Light Account'
     },
   ]
 
@@ -170,6 +174,35 @@ export default function LandingView() {
                       <span>{detail}</span>
                     </div>
                   ))}
+                  {feature.link && (
+                    <a
+                      href={feature.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        display: 'inline-block',
+                        marginTop: 16,
+                        background: feature.color,
+                        color: feature.color === '#fbbf24' ? '#0a0a0a' : '#ffffff',
+                        padding: '8px 16px',
+                        borderRadius: 6,
+                        textDecoration: 'none',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.opacity = '0.8'
+                        e.target.style.transform = 'translateY(-2px)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.opacity = '1'
+                        e.target.style.transform = 'translateY(0)'
+                      }}
+                    >
+                      {feature.linkText} →
+                    </a>
+                  )}
                 </div>
               )}
             </div>
