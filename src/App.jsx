@@ -12,6 +12,8 @@ import WorksheetView from './views/WorksheetView'
 import ChoresView from './views/ChoresView'
 import LeaderboardView from './views/LeaderboardView'
 import PasswordResetView from './views/PasswordResetView'
+import LandingView from './views/LandingView'
+import { getSession } from './services/auth'
 
 export default function App() {
   useEffect(() => {
@@ -37,7 +39,8 @@ export default function App() {
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <div style={{ flex: 1 }}>
           <Routes>
-            <Route path="/" element={<ScannerView />} />
+            <Route path="/" element={getSession() ? <ScannerView /> : <LandingView />} />
+            <Route path="/landing" element={<LandingView />} />
             <Route path="/scan" element={<Navigate to="/" replace />} />
             <Route path="/kiosk" element={<KioskView />} />
             <Route path="/admin" element={<AdminView />} />
