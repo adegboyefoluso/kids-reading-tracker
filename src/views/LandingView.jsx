@@ -37,7 +37,7 @@ export default function LandingView() {
       icon: '💰',
       title: 'Green Light Accounts',
       description: 'Teach kids about money and investing',
-      details: 'Parents open a Green Light account for each child to receive and manage the money they earn. Monitor real-time earnings, spending, and balance growth all in one place. This provides a practical foundation for teaching kids about financial literacy, smart spending, and the value of hard work.',
+      details: 'Parents open a Green Light account for each child to receive and manage the money they earn. Monitor real-time earnings, spending, and balance growth all in one place. Guide your kids toward smart financial decisions by setting spending percentages and teaching them to invest in the stock market. This practical approach builds financial responsibility, investment literacy, and demonstrates how wealth grows over time through strategic saving and investing.',
       color: '#fbbf24',
       link: 'https://www.greenlight.com',
       linkText: 'Open Green Light Account'
@@ -304,9 +304,6 @@ export default function LandingView() {
                 <li><a href="/leaderboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Gamification</a></li>
               </ul>
             </div>
-          </div>
-          <div style={{ borderTop: '1px solid var(--bg-shelf)', paddingTop: 24, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-            © 2026 <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>@Readershall</a> • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Docs</a>
           </div>
         </div>
       </div>
