@@ -19,7 +19,7 @@ export default function LandingView() {
       icon: '🧹',
       title: 'Chore Tracking',
       description: 'Parents reward kids for completing chores',
-      details: 'Create a custom list of household chores with specific reward amounts for each task. Kids can log completed chores anytime from their phone. Parents review and approve the submissions, then rewards are automatically credited to the child\'s balance. This teaches accountability and responsibility while building financial awareness.',
+      details: 'Create a custom list of household chores with specific reward amounts for each task. Kids can log completed chores anytime from any device - phone, tablet, or computer. Parents review and approve the submissions, then rewards are automatically credited to the child\'s balance. This teaches accountability and responsibility while building financial awareness.',
       color: '#fbbf24'
     },
     {
@@ -27,7 +27,7 @@ export default function LandingView() {
       icon: '🎓',
       title: 'Khan Academy Hours',
       description: 'Encourage online learning with milestone rewards',
-      details: 'Set monthly learning hour targets for each child on Khan Academy. At month end, log the total hours they completed. Our smart reward system uses proportional scaling: reaching 70% of the target earns 100% of the reward, with rewards scaling proportionally for lower achievement. This incentivizes consistent learning while recognizing partial progress.',
+      details: 'Set monthly learning hour targets for each child on the app. At month end, log the total hours they completed on Khan Academy. Our smart reward system uses proportional scaling: reaching 70% of the target earns 100% of the reward, with rewards scaling proportionally for lower achievement. This incentivizes consistent learning while recognizing partial progress.',
       color: '#06b6d4',
       link: 'https://www.khanacademy.org/signup',
       linkText: 'Create Khan Academy Account'
