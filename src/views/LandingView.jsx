@@ -300,9 +300,9 @@ export default function LandingView() {
         </div>
       </div>
 
-      {/* CTA Footer */}
-      <div style={{ background: 'var(--bg-card)', padding: '60px 20px', textAlign: 'center', borderTop: '1px solid var(--bg-shelf)' }}>
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      {/* Footer */}
+      <div style={{ background: 'var(--bg-card)', padding: '60px 20px 30px', textAlign: 'center', borderTop: '1px solid var(--bg-shelf)' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto', marginBottom: 40 }}>
           <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 16, color: 'var(--text)' }}>
             Ready to Transform Reading?
           </div>
@@ -332,15 +332,13 @@ export default function LandingView() {
           >
             Get Started Free
           </button>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 32 }}>
             No credit card required • Free forever • Open source
           </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div style={{ background: 'var(--bg)', padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', borderTop: '1px solid var(--bg-shelf)' }}>
-        <div>© 2026 Kids Reading Tracker • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>GitHub</a> • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Docs</a></div>
+        <div style={{ borderTop: '1px solid var(--bg-shelf)', paddingTop: 24, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+          © 2026 Kids Reading Tracker • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>GitHub</a> • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Docs</a>
+        </div>
       </div>
     </div>
   )
