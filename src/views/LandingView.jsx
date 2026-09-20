@@ -337,7 +337,7 @@ export default function LandingView() {
           </div>
         </div>
         <div style={{ borderTop: '1px solid var(--bg-shelf)', paddingTop: 24, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          © 2026 Kids Reading Tracker • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>GitHub</a> • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Docs</a>
+          © 2026 <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>@Readershall</a> • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Docs</a>
         </div>
       </div>
     </div>
