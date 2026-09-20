@@ -50,24 +50,50 @@ export default function LandingView() {
       <div style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--bg-shelf)', padding: '16px 20px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--gold)' }}>📖 Kids Reading Tracker</div>
-          <button
-            onClick={() => navigate('/setup')}
-            style={{
-              background: 'var(--gold)',
-              color: '#0a0a0a',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 24px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.opacity = '0.8'}
-            onMouseLeave={(e) => e.target.style.opacity = '1'}
-          >
-            Get Started →
-          </button>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <button
+              onClick={() => navigate('/setup')}
+              style={{
+                background: 'transparent',
+                color: 'var(--text)',
+                border: `1px solid var(--gold)`,
+                borderRadius: 8,
+                padding: '10px 24px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'var(--gold)'
+                e.target.style.color = '#0a0a0a'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent'
+                e.target.style.color = 'var(--text)'
+              }}
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => navigate('/setup')}
+              style={{
+                background: 'var(--gold)',
+                color: '#0a0a0a',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 24px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+              onMouseLeave={(e) => e.target.style.opacity = '1'}
+            >
+              Sign Up →
+            </button>
+          </div>
         </div>
       </div>
 
@@ -101,7 +127,7 @@ export default function LandingView() {
             e.target.style.opacity = '1'
           }}
         >
-          Start for Free
+          Sign Up Free
         </button>
       </div>
 
