@@ -11,12 +11,7 @@ export default function LandingView() {
       icon: '📚',
       title: 'Book Rewards',
       description: 'Kids earn money by scanning and reading books',
-      details: [
-        'Scan ISBN barcodes with phone camera',
-        'Auto-lookup book details from Open Library',
-        'Instant rewards credited to balance',
-        'Build a personal reading library',
-      ],
+      details: 'Simply scan the ISBN barcode of any book with your phone camera, and our app instantly looks up book details from Open Library. Kids immediately earn rewards that are credited to their balance. This creates a personal reading library while motivating children to read more books and explore new titles.',
       color: '#10b981'
     },
     {
@@ -24,12 +19,7 @@ export default function LandingView() {
       icon: '🧹',
       title: 'Chore Tracking',
       description: 'Parents reward kids for completing chores',
-      details: [
-        'Create custom chore list with rewards',
-        'Kids log completed chores anytime',
-        'Parent approves and credits rewards',
-        'Track chore history and earnings',
-      ],
+      details: 'Create a custom list of household chores with specific reward amounts for each task. Kids can log completed chores anytime from their phone. Parents review and approve the submissions, then rewards are automatically credited to the child\'s balance. This teaches accountability and responsibility while building financial awareness.',
       color: '#fbbf24'
     },
     {
@@ -37,12 +27,7 @@ export default function LandingView() {
       icon: '🎓',
       title: 'Khan Academy Hours',
       description: 'Encourage online learning with milestone rewards',
-      details: [
-        'Set monthly learning hour targets',
-        'Admin logs hours at month end',
-        'Proportional rewards: 70% target = 100% reward',
-        'Track weekly progress toward goals',
-      ],
+      details: 'Set monthly learning hour targets for each child on Khan Academy. At month end, log the total hours they completed. Our smart reward system uses proportional scaling: reaching 70% of the target earns 100% of the reward, with rewards scaling proportionally for lower achievement. This incentivizes consistent learning while recognizing partial progress.',
       color: '#06b6d4',
       link: 'https://www.khanacademy.org/signup',
       linkText: 'Create Khan Academy Account'
@@ -52,12 +37,7 @@ export default function LandingView() {
       icon: '💰',
       title: 'Green Light Accounts',
       description: 'Teach kids about money and investing',
-      details: [
-        'Parent creates account for each child',
-        'Monitor all earnings in real-time',
-        'Track spending and balance growth',
-        'Foundation for financial literacy',
-      ],
+      details: 'Parents open a Green Light account for each child to receive and manage the money they earn. Monitor real-time earnings, spending, and balance growth all in one place. This provides a practical foundation for teaching kids about financial literacy, smart spending, and the value of hard work.',
       color: '#fbbf24',
       link: 'https://www.greenlight.com',
       linkText: 'Open Green Light Account'
@@ -168,12 +148,9 @@ export default function LandingView() {
 
               {activeTab === feature.id && (
                 <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--bg-shelf)' }}>
-                  {feature.details.map((detail, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 10, color: 'var(--text)', fontSize: '0.9rem' }}>
-                      <span style={{ color: feature.color, fontWeight: 700 }}>✓</span>
-                      <span>{detail}</span>
-                    </div>
-                  ))}
+                  <p style={{ color: 'var(--text)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: 16 }}>
+                    {feature.details}
+                  </p>
                   {feature.link && (
                     <a
                       href={feature.link}
@@ -181,7 +158,6 @@ export default function LandingView() {
                       rel="noopener noreferrer"
                       style={{
                         display: 'inline-block',
-                        marginTop: 16,
                         background: feature.color,
                         color: feature.color === '#fbbf24' ? '#0a0a0a' : '#ffffff',
                         padding: '8px 16px',
@@ -247,23 +223,23 @@ export default function LandingView() {
             {
               num: '1',
               title: 'Create Family Account',
-              desc: 'Set up your family and add your kids with names, avatars, and reading levels.'
+              desc: 'Set up your family and add your kids with their names, avatars, and reading levels. This personalized setup helps tailor the experience for each child and makes earning rewards fun and engaging for the whole family.'
             },
             {
               num: '2',
               title: 'Set Goals & Rewards',
-              desc: 'Configure reading targets, chore list, Khan hours, and reward amounts.'
+              desc: 'Configure reading targets, create a chore list, set Khan Academy learning hours, and define reward amounts for each. This customization ensures the app works exactly the way your family wants it to, matching your values and goals.'
             },
             {
               num: '3',
               title: 'Start Tracking',
-              desc: 'Scan books, log chores, record Khan hours, and watch kids earn rewards!'
+              desc: 'Scan books, log chores, record Khan hours, and watch kids earn rewards! Real-time balance updates keep kids motivated and show progress instantly. Parents can monitor everything from the dashboard and make adjustments anytime.'
             },
           ].map((step, i) => (
             <div key={i} style={{ background: 'var(--bg-card)', border: '1px solid var(--bg-shelf)', borderRadius: 12, padding: 32 }}>
               <div style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--gold)', marginBottom: 16 }}>{step.num}</div>
               <div style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: 12, color: 'var(--text)' }}>{step.title}</div>
-              <div style={{ color: 'var(--text-muted)', lineHeight: 1.6 }}>{step.desc}</div>
+              <div style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontSize: '0.95rem' }}>{step.desc}</div>
             </div>
           ))}
         </div>
@@ -300,44 +276,38 @@ export default function LandingView() {
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Single Footer */}
       <div style={{ background: 'var(--bg-card)', padding: '60px 20px 30px', textAlign: 'center', borderTop: '1px solid var(--bg-shelf)' }}>
-        <div style={{ maxWidth: 600, margin: '0 auto', marginBottom: 40 }}>
-          <div style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 16, color: 'var(--text)' }}>
-            Ready to Transform Reading?
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 40, marginBottom: 40 }}>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, color: 'var(--text)' }}>📖 Reading Tracker</div>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                Track family reading progress, celebrate achievements, and make reading fun with rewards.
+              </p>
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, color: 'var(--text)' }}>Navigation</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                <li><a href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Home</a></li>
+                <li><a href="/admin" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Admin Panel</a></li>
+                <li><a href="/analytics" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Analytics</a></li>
+                <li><a href="/leaderboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Leaderboard</a></li>
+              </ul>
+            </div>
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 16, color: 'var(--text)' }}>Features</div>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                <li><a href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Book Scanner</a></li>
+                <li><a href="/chores" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Chores & Rewards</a></li>
+                <li><a href="/analytics" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Reading Analytics</a></li>
+                <li><a href="/leaderboard" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>Gamification</a></li>
+              </ul>
+            </div>
           </div>
-          <div style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: 32, lineHeight: 1.6 }}>
-            Create your free family account today and start rewarding your kids for every book they read, chore they complete, and hour they learn.
+          <div style={{ borderTop: '1px solid var(--bg-shelf)', paddingTop: 24, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+            © 2026 <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>@Readershall</a> • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Docs</a>
           </div>
-          <button
-            onClick={() => navigate('/setup')}
-            style={{
-              background: 'var(--gold)',
-              color: '#0a0a0a',
-              border: 'none',
-              borderRadius: 12,
-              padding: '14px 36px',
-              fontWeight: 800,
-              cursor: 'pointer',
-              fontSize: '1rem',
-              transition: 'all 0.3s',
-              marginBottom: 16
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'scale(1.05)'
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'scale(1)'
-            }}
-          >
-            Get Started Free
-          </button>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: 32 }}>
-            No credit card required • Free forever • Open source
-          </div>
-        </div>
-        <div style={{ borderTop: '1px solid var(--bg-shelf)', paddingTop: 24, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          © 2026 <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>@Readershall</a> • <a href="#" style={{ color: 'var(--gold)', textDecoration: 'none' }}>Docs</a>
         </div>
       </div>
     </div>
