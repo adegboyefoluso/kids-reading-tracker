@@ -1,5 +1,5 @@
 {
-  "redirects": [
+  "headers": [
     {
       "source": "/index.html",
       "headers": [
@@ -8,9 +8,7 @@
           "value": "public, max-age=0, must-revalidate"
         }
       ]
-    }
-  ],
-  "headers": [
+    },
     {
       "source": "/(.*)",
       "headers": [
