@@ -321,7 +321,7 @@ function BookSummaryModal({ book, onClose, initialTab, readers = [] }) {
                 <div style={{ background: '#141414', border: '1px solid #ffffff', borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
                   <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#e5e5e5', marginBottom: 4 }}>⚠️ Accuracy could not be verified</div>
                   <p style={{ fontSize: '0.78rem', color: '#6b7280', margin: 0, lineHeight: 1.5 }}>
-                    This book was not found in Google Books or Open Library. The grade reflects <strong>writing quality only</strong>.
+                    This book could not be found in Google Books, Open Library or Wikipedia, so the story itself was not checked. The grade reflects <strong>writing quality and how clearly the story is retold</strong> — the summary is not marked down for content we could not verify.
                   </p>
                 </div>
               )}

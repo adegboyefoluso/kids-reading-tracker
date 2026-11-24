@@ -13,67 +13,120 @@ async function fetchWithTimeout(url, options = {}, ms = 3000) {
   }
 }
 
-// Three-strategy lookup — returns { description, source } or null
-async function fetchBookDescription(isbn, title, author) {
-  // ── Strategy 1: Google Books by ISBN (most precise) ──────────────────────
-  if (isbn) {
+const LOOKUP_TIMEOUT = 5000
+const UA = { 'User-Agent': 'ReadersHall/1.0 (book summary grader)' }
+
+const olDesc = work => typeof work?.description === 'string' ? work.description : work?.description?.value
+
+// Google Books — ISBN first, then title+author. Optional GOOGLE_BOOKS_API_KEY
+// avoids the shared-IP rate limiting (429) Vercel functions often hit.
+async function fromGoogleBooks(isbn, title, author) {
+  const key = (process.env.GOOGLE_BOOKS_API_KEY || '').trim()
+  const k = key ? `&key=${key}` : ''
+  const queries = []
+  if (isbn) queries.push(`isbn:${isbn}`)
+  if (title) queries.push([`intitle:"${title}"`, author && `inauthor:"${author}"`].filter(Boolean).join(' '))
+  for (const q of queries) {
     try {
       const r = await fetchWithTimeout(
-        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&maxResults=1`, {}, 3000)
-      if (r.ok) {
-        const d = await r.json()
-        const desc = d.items?.[0]?.volumeInfo?.description
-        if (desc && desc.length > 30) return { description: desc, source: 'isbn' }
+        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(q)}&maxResults=3${k}`, {}, LOOKUP_TIMEOUT)
+      if (!r.ok) continue
+      const d = await r.json()
+      for (const item of (d.items || [])) {
+        const desc = item.volumeInfo?.description
+        if (desc && desc.length > 30) return desc
       }
     } catch {}
   }
+  return null
+}
 
-  // ── Strategy 2: Google Books with intitle + inauthor filters ─────────────
-  if (title) {
+// Open Library — ISBN → work, then title(+author) search → work
+async function fromOpenLibrary(isbn, title, author) {
+  if (isbn) {
     try {
-      const parts = [`intitle:"${title}"`]
-      if (author) parts.push(`inauthor:"${author}"`)
-      const r = await fetchWithTimeout(
-        `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(parts.join(' '))}&maxResults=3`, {}, 3000)
+      const r = await fetchWithTimeout(`https://openlibrary.org/isbn/${isbn}.json`, {}, LOOKUP_TIMEOUT)
       if (r.ok) {
-        const d = await r.json()
-        for (const item of (d.items || [])) {
-          const desc = item.volumeInfo?.description
-          if (desc && desc.length > 30) return { description: desc, source: 'title+author' }
+        const ed = await r.json()
+        if (olDesc(ed)?.length > 30) return olDesc(ed)
+        const wk = ed.works?.[0]?.key
+        if (wk) {
+          const wr = await fetchWithTimeout(`https://openlibrary.org${wk}.json`, {}, LOOKUP_TIMEOUT)
+          if (wr.ok) { const d = olDesc(await wr.json()); if (d?.length > 30) return d }
         }
       }
     } catch {}
   }
-
-  // ── Strategy 3: Open Library by title search ──────────────────────────────
   if (title) {
     try {
-      const q = encodeURIComponent(title.trim())
-      const r = await fetchWithTimeout(
-        `https://openlibrary.org/search.json?title=${q}&limit=3`, {}, 3000)
+      const qs = `title=${encodeURIComponent(title.trim())}${author ? `&author=${encodeURIComponent(author)}` : ''}&limit=3`
+      const r = await fetchWithTimeout(`https://openlibrary.org/search.json?${qs}`, {}, LOOKUP_TIMEOUT)
       if (r.ok) {
         const d = await r.json()
-        // Open Library search gives us OLIDs — fetch the first work that has a description
         for (const doc of (d.docs || []).slice(0, 3)) {
-          const olid = doc.key // e.g. /works/OL123W
-          if (!olid) continue
+          if (!doc.key) continue
           try {
-            const wr = await fetchWithTimeout(
-              `https://openlibrary.org${olid}.json`, {}, 3000)
-            if (wr.ok) {
-              const work = await wr.json()
-              const desc = typeof work.description === 'string'
-                ? work.description
-                : work.description?.value
-              if (desc && desc.length > 30) return { description: desc, source: 'openlibrary' }
-            }
+            const wr = await fetchWithTimeout(`https://openlibrary.org${doc.key}.json`, {}, LOOKUP_TIMEOUT)
+            if (wr.ok) { const desc = olDesc(await wr.json()); if (desc?.length > 30) return desc }
           } catch {}
         }
       }
     } catch {}
   }
-
   return null
+}
+
+// Wikipedia — the "Plot"/"Synopsis" section is a far better reference than a
+// publisher blurb because it covers the whole story, including the ending.
+async function fromWikipedia(title, author) {
+  if (!title) return null
+  try {
+    const q = `${title} ${author || ''} book`.trim()
+    const sr = await fetchWithTimeout(
+      `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&srlimit=3&format=json&origin=*`,
+      { headers: UA }, LOOKUP_TIMEOUT)
+    if (!sr.ok) return null
+    const hits = (await sr.json()).query?.search || []
+    const titleWords = title.toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 2)
+    const authorLast = (author || '').trim().split(/\s+/).pop()?.toLowerCase()
+    for (const hit of hits) {
+      const pageTitle = hit.title.toLowerCase()
+      // Page title must share most of the book title's significant words
+      const overlap = titleWords.filter(w => pageTitle.includes(w)).length
+      if (titleWords.length && overlap / titleWords.length < 0.6) continue
+      const pr = await fetchWithTimeout(
+        `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=wiki&redirects=1&titles=${encodeURIComponent(hit.title)}&format=json&origin=*`,
+        { headers: UA }, LOOKUP_TIMEOUT)
+      if (!pr.ok) continue
+      const pages = (await pr.json()).query?.pages || {}
+      const text = Object.values(pages)[0]?.extract || ''
+      if (!text) continue
+      // Must actually be about this book (mentions the author, or is described as a book)
+      const intro = text.slice(0, 1500).toLowerCase()
+      if (authorLast && authorLast.length > 2 ? !intro.includes(authorLast) : !/novel|book|story/.test(intro)) continue
+      const plot = text.match(/==\s*(Plot(?: summary)?|Synopsis|Summary|Story)\s*==\s*([\s\S]*?)(?=\n==[^=]|$)/i)
+      const body = (plot ? plot[2] : text.split(/\n==/)[0]).replace(/\n{2,}/g, '\n').trim()
+      if (body.length > 80) return body
+    }
+  } catch {}
+  return null
+}
+
+// Looks the book up in all sources in parallel and merges what it finds.
+// Returns { description, sources, hasPlot } or null.
+async function fetchBookDescription(isbn, title, author, providedDescription) {
+  const [google, openlib, wiki] = await Promise.all([
+    providedDescription ? Promise.resolve(null) : fromGoogleBooks(isbn, title, author),
+    providedDescription ? Promise.resolve(null) : fromOpenLibrary(isbn, title, author),
+    fromWikipedia(title, author),
+  ])
+  const parts = []
+  const sources = []
+  const blurb = providedDescription || google || openlib
+  if (blurb) { parts.push(`Publisher/library description:\n${blurb.slice(0, 1500)}`); sources.push(providedDescription ? 'stored' : google ? 'googlebooks' : 'openlibrary') }
+  if (wiki)  { parts.push(`Plot summary (Wikipedia):\n${wiki.slice(0, 3000)}`); sources.push('wikipedia') }
+  if (!parts.length) return null
+  return { description: parts.join('\n\n'), sources, hasPlot: Boolean(wiki) }
 }
 
 // ── Shared topic maps (used by both quiz and worksheet handlers) ──────────────
@@ -448,18 +501,14 @@ Be thorough, warm, and talk TO me the whole time!`
   const { isbn, title, author, summary, description: providedDescription, grade } = req.body || {}
   if (!title || !summary) return res.status(400).json({ error: 'Title and summary required' })
 
-  // Use stored description if provided (most reliable — fetched at search time).
-  // Fall back to external fetch only if no stored description is available.
-  let hasDescription = false
-  let bookDescription = null
-  if (providedDescription && providedDescription.length > 30) {
-    hasDescription = true
-    bookDescription = providedDescription
-  } else {
-    const bookResult = await fetchBookDescription(isbn, title, author)
-    hasDescription = Boolean(bookResult)
-    bookDescription = bookResult?.description || null
-  }
+  // Look the book up: stored blurb (from search time) + Google Books / Open
+  // Library + Wikipedia plot summary, merged. A blurb alone is NOT the story.
+  const lookupResult = await fetchBookDescription(
+    isbn, title, author,
+    providedDescription && providedDescription.length > 30 ? providedDescription : null)
+  const hasDescription  = Boolean(lookupResult)
+  const hasPlot         = Boolean(lookupResult?.hasPlot)
+  const bookDescription = lookupResult?.description || null
 
   // GRADE-AWARE RUBRIC: expectations change by grade level
   const GRADE_RUBRICS = {
@@ -492,15 +541,16 @@ Add:
 - "corrections": identify up to 15 CLEAR, UNAMBIGUOUS errors (be thorough). Do NOT flag: split infinitives, informal phrases OK in context, style choices, or debatable items. ONLY flag: misspellings, subject-verb disagreement, tense shifts, repeated/missing words, run-on sentences, or broken structure. For each error, copy EXACT text from summary and provide correction. Format: [{"quote":"<exact phrase>","type":"spelling"|"grammar"|"structure"|"punctuation"|"clarity","lineContext":"<surrounding 5-10 words for reference>","issue":"<specific problem>","fix":"<corrected version>","explanation":"<why this matters>"}]. Return [] if no errors. AIM FOR THOROUGHNESS - catch all real errors.`
 
   const accuracyInstructions = `
-6. Accuracy — CRITICAL. Compare every claim against your knowledge of this book.
+6. Accuracy — compare the summary's claims against the REFERENCE MATERIAL and your own knowledge of this book.
 • Wrong characters/events = 0–2
 • Wrong book entirely = 0–2
 • Wrong main character/premise/ending = 0–3
 • Right theme, wrong details = 3–5
 • Mostly correct, 1–2 minor issues = 6–8
 • Clearly matches the real book = 9–10
-CRITICAL: Perfect writing about the WRONG book scores 0–2. Writing quality ≠ accuracy.
-- "accuracyNote": One honest sentence naming specific differences or confirming correctness. Exception: if you have no knowledge of this book, set accuracy to null and note: "This book was not found in my knowledge base — accuracy could not be assessed."`
+Only mark a detail as WRONG if it clearly CONTRADICTS the reference material or something you are confident about. A detail that is simply not mentioned in the reference is NOT an error — blurbs and short plot summaries leave most of the story out.
+- "accuracyNote": One honest sentence naming specific contradictions or confirming correctness.
+- If you cannot verify the story (no reference material AND you do not confidently know this book), set "accuracy" to null and "accuracyNote" to "This book could not be verified, so accuracy was not scored."`
 
   const validationInstructions = `
 7. BOOK VALIDATION — Critical check for educators and parents.
@@ -540,35 +590,46 @@ Add to JSON:
     "validationWarning": <null if all checks pass, else string explaining the concern>
   }`
 
-  const prompt = hasDescription
-    ? `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
+  const referenceBlock = !hasDescription
+    ? `REFERENCE MATERIAL: none could be found for this book.`
+    : `REFERENCE MATERIAL (from book databases${hasPlot ? ' and Wikipedia' : ''}):
+${bookDescription}
+${hasPlot ? '' : '\nNOTE: this is only a short marketing blurb. It does NOT describe most of the story or the ending.'}`
 
-CRITICAL FIRST: BOOK VALIDATION
-Before grading, validate whether this child actually read the book they claim. This is for educators and parents to trust the system.
+  const prompt = `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
 
-Check for:
+BOOK: "${title}" by ${author || 'unknown'}
+
+${referenceBlock}
+
+STEP 1 — HOW WELL CAN YOU VERIFY THIS STORY?
+Decide "bookKnowledge":
+- "strong": you have a full plot reference above, or you confidently know this specific book's characters, plot and ending.
+- "partial": you know roughly what the book is about (e.g. from a blurb) but not the detailed plot.
+- "none": no reference material and you do not recognise this specific book.
+Be honest. Many children's books (picture books, early readers, series entries, new releases) are unfamiliar — that is fine. Never guess at a plot you do not know.
+
+FAIRNESS RULES (very important — a child's grade depends on this):
+- NEVER mark the summary wrong, incomplete or invented just because you cannot see the full story. Missing reference ≠ wrong summary.
+- When bookKnowledge is "partial": only penalise details that clearly contradict what you DO know. Treat other specific details as plausibly correct.
+- When bookKnowledge is "none":
+  • Do not judge whether events are correct. Grade Comprehension and Detail on how clear, specific, well-sequenced and internally consistent the retelling is (does it name characters, describe events in order, explain the problem and how it ends).
+  • Set "accuracy" to null.
+  • Set possiblyConfusedBook and madeUpPlotPoints to false, and likelyActuallyRead to true unless the summary is clearly generic or copied.
+  • Feedback must not say the summary is wrong, inaccurate or missing parts of the plot.
+
+STEP 2 — BOOK VALIDATION (for parents)
 A. PLAGIARISM/AI REWRITING: Is writing too polished/formal for Grade ${gradeKey}? Generic AI phrases? Vocabulary too advanced? No personal voice?
-B. ACTUALLY READ: Do they mention specific scenes NOT in marketing blurbs? Deep knowledge or just blurb-level?
-C. CONFUSED BOOK: Wrong characters/plot from a different book in same genre?
-D. MADE-UP EVENTS: Plot points that sound real but don't actually happen?
+B. ACTUALLY READ: Do they mention specific scenes beyond what a back-cover blurb would say?
+C. CONFUSED BOOK: Characters/plot clearly from a DIFFERENT book? (Only flag if you are confident.)
+D. MADE-UP EVENTS: Events that clearly contradict the known plot? (Only flag if you are confident.)
 
-Output validation as a JSON object with: likelyPlagiarized, likelyActuallyRead, possiblyConfusedBook, madeUpPlotPoints (all boolean), validationWarning (null or string).
-
----
-
-THEN: GRADE THE SUMMARY
+STEP 3 — GRADE THE SUMMARY
 
 IMPORTANT: Your expectations must match their grade level. For Grade ${gradeKey}:
 - Expected focus: ${rubric.focus}
 - Forgivable errors: ${rubric.forgive}
 - Comprehension bar: ${rubric.comprehensionFloor}
-
-BOOK: "${title}" by ${author || 'unknown'}
-
-PUBLISHER/LIBRARY DESCRIPTION:
-${bookDescription.slice(0, 1500)}
-
-Draw on your own knowledge of this book (characters, plot, themes, ending) to verify the reader's understanding.
 
 READER'S SUMMARY:
 ${summary}
@@ -625,93 +686,7 @@ CRITICAL: Return ONLY valid JSON, nothing else. No markdown, no backticks, no ex
 
 Use this exact JSON structure (strings MUST have special characters escaped):
 {
-  "score": <number 0-50>,
-  "comprehension": <0-10>,
-  "detail": <0-10>,
-  "reflection": <0-10>,
-  "grammar": <0-10>,
-  "structure": <0-10>,
-  "accuracy": <0-10 or null>,
-  "accuracyNote": "<short sentence or null>",
-  "feedback": "<2-3 sentences only>",
-  "suggestions": "<8-10 numbered tips, separated by newlines>",
-  "detailedAnalysis": "<8-12 sentences only>",
-  "aiDetection": <0-100>,
-  "aiWarning": <null or "single sentence">,
-  "corrections": [],
-  "validation": {
-    "likelyPlagiarized": <true or false>,
-    "likelyActuallyRead": <true or false>,
-    "possiblyConfusedBook": <true or false>,
-    "madeUpPlotPoints": <true or false>,
-    "validationWarning": <null or "short sentence">
-  }
-}
-
-Remember: Keep all text fields SHORT. Feedback max 3 sentences. Analysis max 12 sentences. No special characters like curly braces or unescaped quotes in strings.`
-
-    : `You are grading a ${rubric.name} reader's book summary for a child aged ${gradeKey <= 5 ? '5-11' : gradeKey <= 8 ? '11-14' : '14-18'}.
-
-CRITICAL FIRST: BOOK VALIDATION
-Before grading, validate whether this child actually read the book they claim. This is for educators and parents to trust the system.
-
-Check for:
-A. PLAGIARISM/AI REWRITING: Is writing too polished/formal for Grade ${gradeKey}? Generic AI phrases? Vocabulary too advanced? No personal voice?
-B. ACTUALLY READ: Do they mention specific scenes NOT in marketing blurbs? Deep knowledge or just blurb-level?
-C. CONFUSED BOOK: Wrong characters/plot from a different book in same genre?
-D. MADE-UP EVENTS: Plot points that sound real but don't actually happen?
-
-Output validation as a JSON object with: likelyPlagiarized, likelyActuallyRead, possiblyConfusedBook, madeUpPlotPoints (all boolean), validationWarning (null or string).
-
----
-
-THEN: GRADE THE SUMMARY
-
-IMPORTANT: Your expectations must match their grade level. For Grade ${gradeKey}:
-- Expected focus: ${rubric.focus}
-- Forgivable errors: ${rubric.forgive}
-- Comprehension bar: ${rubric.comprehensionFloor}
-
-BOOK: "${title}" by ${author || 'unknown'}
-
-No external description found. Use your trained knowledge of this book: plot, characters, themes, key events, ending. Use that as your accuracy reference.
-
-READER'S SUMMARY:
-${summary}
-
-Grade on SIX criteria (each 0–10, scaled to Grade ${gradeKey} expectations):
-
-1. Comprehension — Did they understand the main plot, themes, key ideas of THIS book? (Grade ${gradeKey}: ${rubric.comprehensionFloor})
-2. Detail — Did they include specific characters, events, details that actually appear? (Grade ${gradeKey} standard)
-3. Reflection — Did they share genuine personal opinion or what they learned? (Age-appropriate depth)
-4. Grammar — Spelling, punctuation, sentence construction. Grade ${gradeKey} standard.
-5. Structure — Is it organized with clear beginning, middle, end? Does it flow? (Grade ${gradeKey} level)
-${accuracyInstructions}
-
-Also provide EXTREMELY DETAILED, COMPREHENSIVE FEEDBACK (this is the main point):
-- "feedback": 2-3 sentences highlighting strongest points (tone for Grade ${gradeKey}).
-- "suggestions": Return as a plain text string (NOT JSON array). 8-10 numbered tips (1. 2. 3. etc.), each on separate lines. For EACH tip:
-  * State the EXACT problem from the summary
-  * Explain WHY it's wrong for Grade ${gradeKey}
-  * Show how to fix it with an example
-  * Show what BETTER writing looks like
-- "detailedAnalysis": COMPREHENSIVE 10-15 sentence analysis covering:
-  * SPECIFIC SPELLING/GRAMMAR ERRORS: List EVERY error found with line context and correction
-  * MISSING PLOT/CHARACTER DETAILS: Name SPECIFIC characters they missed
-  * COMPREHENSION LEVEL: For this grade, did they understand complex themes or just surface-level ideas?
-  * WRITING MATURITY ASSESSMENT: Is vocabulary collegiate-level? Does sentence structure vary? Do they cite specific evidence?
-  * REPETITION PROBLEMS: Point out exact repeated phrases and suggest varied alternatives
-  * STRUCTURAL ISSUES: How do paragraphs connect? What transitions are missing? Why does it feel repetitive?
-  * COMPARISON TO STANDARD: For Grade ${gradeKey}, how does this compare to expected level? Specific examples of why and how to elevate it.
-  (Write DETAILED feedback that a teacher would give)
-${aiDetectionInstruction}
-${correctionsInstruction}
-${validationInstructions}
-
-CRITICAL: Return ONLY valid JSON, nothing else. No markdown, no backticks, no extra text.
-
-Use this exact JSON structure (strings MUST have special characters escaped):
-{
+  "bookKnowledge": "<strong|partial|none>",
   "score": <number 0-50>,
   "comprehension": <0-10>,
   "detail": <0-10>,
@@ -774,9 +749,33 @@ Remember: Keep all text fields SHORT. Feedback max 3 sentences. Analysis max 12 
         fullResponse: match[0].slice(0, 1000)
       })
     }
+    // ── Safety net: never penalise a child for a story we couldn't verify ──
+    const knowledge = ['strong', 'partial', 'none'].includes(gradeData.bookKnowledge)
+      ? gradeData.bookKnowledge
+      : (hasPlot ? 'strong' : hasDescription ? 'partial' : 'none')
+    gradeData.bookKnowledge = knowledge
+    if (knowledge === 'none') {
+      gradeData.accuracy = null
+      gradeData.accuracyNote = 'This book could not be verified, so accuracy was not scored. The grade reflects writing quality and how clearly the story is retold.'
+      const v = gradeData.validation || {}
+      gradeData.validation = {
+        ...v,
+        possiblyConfusedBook: false,
+        madeUpPlotPoints: false,
+        likelyActuallyRead: v.likelyPlagiarized ? Boolean(v.likelyActuallyRead) : true,
+        validationWarning: v.likelyPlagiarized ? (v.validationWarning || null) : null,
+      }
+    }
+    // Keep the 0–50 score consistent with the five criteria
+    const crit = ['comprehension', 'detail', 'reflection', 'grammar', 'structure']
+      .map(k => Math.max(0, Math.min(10, Number(gradeData[k]) || 0)))
+    gradeData.score = crit.reduce((a, b) => a + b, 0)
+
     gradeData.bookFound = hasDescription
     gradeData.gradeLevel = gradeKey
-    gradeData.bookDescriptionPreview = hasDescription ? bookDescription.slice(0, 250) : null
+    gradeData.bookDescriptionPreview = hasDescription
+      ? bookDescription.replace(/^[^\n]*:\n/, '').slice(0, 250)
+      : null
     return res.status(200).json(gradeData)
   } catch (e) {
     return res.status(500).json({ error: e.message })

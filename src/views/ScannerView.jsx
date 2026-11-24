@@ -952,7 +952,7 @@ function EditBookModal({ book, onSave, onBookCredited, onClose }) {
         const esess = getSession()
         if (esess?.familyId) notifySubmitted({ familyId: esess.familyId, bookTitle: book.title, readerName: esess.name, bookId: book.id })
         fetch('/api/grade', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isbn: book.isbn, title: book.title, author: book.author, summary: review, description: book.description || '' }) })
+          body: JSON.stringify({ isbn: book.isbn, title: book.title, author: book.author, summary: review, description: book.description || '', grade: esess?.grade || '5' }) })
           .then(r => r.ok ? r.json() : null)
           .then(g => g && updateBook(book.id, { gradeScore: g.score, gradeFeedback: g.feedback, gradeComprehension: g.comprehension, gradeDetail: g.detail, gradeReflection: g.reflection, gradeGrammar: g.grammar ?? 0, gradeStructure: g.structure ?? 0, gradeSuggestions: g.suggestions || '', gradeAccuracy: g.accuracy ?? -1, gradeAccuracyNote: g.accuracyNote || '', gradeBookFound: g.bookFound ? 1 : 0, bookDescriptionPreview: g.bookDescriptionPreview || '', aiDetection: g.aiDetection ?? 0, aiWarning: g.aiWarning || '', gradeCorrections: JSON.stringify(g.corrections || []) }))
           .catch(() => {})
